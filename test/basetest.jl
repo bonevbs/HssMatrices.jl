@@ -20,5 +20,5 @@ rcl = bisection_cluster(1:m, lsz)
 ccl = bisection_cluster(1:n, lsz)
 print_tree(rcl)
 
-hssA = hss_compress_direct(A, rcl, ccl, 1e-3);
+hssA = hss_compress_direct(A, rcl, ccl);
 #println(typeof(hssA))

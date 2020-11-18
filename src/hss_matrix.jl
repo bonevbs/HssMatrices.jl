@@ -35,6 +35,11 @@ mutable struct HssMatrix{T<:Number}
   HssMatrix() = HssMatrix{Number}()
 end
 
+## Typecasting routines
+# function HssMatrix{T<:Number}(hssA::HssMatrix{S}) where S
+#   isdefined() ? HssMatrix
+# end
+
 ## Overriding some standard routines
 
 # Base.size

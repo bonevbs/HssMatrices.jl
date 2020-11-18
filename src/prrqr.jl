@@ -1,10 +1,10 @@
 using LinearAlgebra
 
 # generate convenience access functions that copies A
-prrqr(A::AbstractMatrix{S}, tol; reltol=false) where S = prrqr!(copy(A), tol; reltol=reltol)
+prrqr(A::Matrix{T}, tol; reltol=false) where T = prrqr!(copy(A), tol; reltol=reltol)
 
 # method for computing the pivoted rank-revealing qr in place
-function prrqr!(A::AbstractMatrix{S}, tol; reltol=false) where S
+function prrqr!(A::Matrix{T}, tol; reltol=false) where T
   m, n = size(A)
 
   vnrm = sum(abs2, A, dims=1)
@@ -14,8 +14,8 @@ function prrqr!(A::AbstractMatrix{S}, tol; reltol=false) where S
   jj = 0
 
   # storage for Householder reflectors
-  Pu = Vector{Vector{S}}(undef, min(m,n));
-  Pb = Vector{S}(undef, min(m,n))
+  Pu = Vector{Vector{T}}(undef, min(m,n));
+  Pb = Vector{T}(undef, min(m,n))
 
   for j = 1:min(m,n-1)
     # find the maximum and move it to the front
@@ -55,7 +55,7 @@ function prrqr!(A::AbstractMatrix{S}, tol; reltol=false) where S
     jj = j
   end
 
-  Q = Matrix{S}(I, m, m)
+  Q = Matrix{T}(I, m, m)
   for j = jj:-1:1
     Q[j:end,:] = Q[j:end,:] - Pb[j] * Pu[j] * (Pu[j]' * Q[j:end,:]);
   end
