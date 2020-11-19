@@ -1,5 +1,3 @@
-using AbstractTrees
-
 ## most of this is taken from the AbstractTrees example
 mutable struct BinaryNode{T}
   data::T
@@ -61,6 +59,7 @@ function hss_from_cluster(rcl::BinaryNode{UnitRange{T}}, ccl::BinaryNode{UnitRan
   # recursive definition
   function hss_from_cluster_rec(rcl::BinaryNode{UnitRange{T}}, ccl::BinaryNode{UnitRange{T}})
     hssA = HssMatrix()
+    hssA.rootnode = false
     if isdefined(rcl, :left) && isdefined(ccl, :left)
       hssA.A11 = hss_from_cluster_rec(rcl.left, ccl.left)
       hssA.m1 = length(rcl.left.data)

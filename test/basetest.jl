@@ -18,7 +18,12 @@ m, n = size(A)
 lsz = 10;
 rcl = bisection_cluster(1:m, lsz)
 ccl = bisection_cluster(1:n, lsz)
-print_tree(rcl)
+# print_tree(rcl)
 
 hssA = hss_compress_direct(A, rcl, ccl);
+x = randn(101, 2);
+hss_generators(hssA.A11)
+y = hssA*x
+#println(norm(y - A*x));
+
 #println(typeof(hssA))

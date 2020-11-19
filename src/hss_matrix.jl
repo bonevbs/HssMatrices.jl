@@ -1,5 +1,3 @@
-using AbstractTrees
-
 ## definition of datastructures
 # recursive format for HSS matrices
 mutable struct HssMatrix{T<:Number}
