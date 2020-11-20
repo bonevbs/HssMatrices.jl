@@ -20,10 +20,19 @@ rcl = bisection_cluster(1:m, lsz)
 ccl = bisection_cluster(1:n, lsz)
 # print_tree(rcl)
 
+# test compression
 hssA = hss_compress_direct(A, rcl, ccl);
-x = randn(101, 2);
-hss_generators(hssA.A11)
-y = hssA*x
-#println(norm(y - A*x));
 
-#println(typeof(hssA))
+# test computation of generators
+U1, V2 = generators(hssA, (1,2))
+A12 = A[1:hssA.m1,hssA.n1+1:end];
+println(norm(A12 - U1*hssA.B12*V2'))
+U2, V1 = generators(hssA, (2,1))
+A21 = A[hssA.m1+1:end,1:hssA.n1];
+println(norm(A21 - U2*hssA.B21*V1'))
+
+# test mat-vec
+x = randn(101, 2);
+println(norm(y - hssA*x));
+
+#println(typeof(hssA)) 

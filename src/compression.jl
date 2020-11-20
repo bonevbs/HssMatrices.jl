@@ -8,7 +8,8 @@
 # wrapper function that will be exported
 function hss_compress_direct(A::Matrix{T}, rcl::BinaryNode, ccl::BinaryNode, tol=tol; reltol=reltol) where T
   m = length(rcl.data); n = length(ccl.data)
-  hssA = hss_from_cluster(rcl, ccl)
+  hssA = HssMatrix{T}(); hssA.rootnode = true;
+  hssA = hss_from_cluster!(hssA, rcl, ccl)
   Brow = Array{T}(undef, m, 0)
   Bcol = Array{T}(undef, 0, n)
   hss_compress_direct!(hssA, A, Brow, Bcol, 0, 0, m, n, tol; reltol)

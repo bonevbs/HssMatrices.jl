@@ -54,33 +54,42 @@ function bisection_cluster(range::UnitRange{T}, leafsize::T) where {T <: Integer
   return node
 end
 
+## Not happy with the entire situation here, might rewrite this part of the code
 # build empty hssB = HssMatrix from given row and column cluster trees 
-function hss_from_cluster(rcl::BinaryNode{UnitRange{T}}, ccl::BinaryNode{UnitRange{T}}) where {T <: Integer}
-  # recursive definition
-  function hss_from_cluster_rec(rcl::BinaryNode{UnitRange{T}}, ccl::BinaryNode{UnitRange{T}})
-    hssA = HssMatrix()
-    hssA.rootnode = false
-    if isdefined(rcl, :left) && isdefined(ccl, :left)
-      hssA.A11 = hss_from_cluster_rec(rcl.left, ccl.left)
-      hssA.m1 = length(rcl.left.data)
-      hssA.n1 = length(ccl.left.data)
-    elseif isdefined(rcl, :left) || isdefined(ccl, :left)
-      error("row and column cluster trees do not have matching structure")
-    end
-    if isdefined(rcl, :right) && isdefined(ccl, :right)
-      hssA.A22 = hss_from_cluster_rec(rcl.right, ccl.right)
-      hssA.m2 = length(rcl.right.data)
-      hssA.n2 = length(ccl.right.data)
-    elseif isdefined(rcl, :right) || isdefined(ccl, :right)
-      error("row and column cluster trees do not have matching structure")
-    end
-    if !isdefined(rcl, :left) && !isdefined(rcl, :right)
-      hssA.leafnode = true
-    end
-    return hssA
-  end
+function hss_from_cluster(rcl::BinaryNode{UnitRange{S}}, ccl::BinaryNode{UnitRange{S}}) where {S <: Integer}
   # use the recursive routine
-  hssB = hss_from_cluster_rec(rcl, ccl)
-  hssB.rootnode = true
-  return hssB
+  hssA = HssMatrix{Float64}()
+  hss_from_cluster_rec!(hssA, rcl, ccl)
+  hssA.rootnode = true
+  return hssA
+end
+
+function hss_from_cluster!(hssA::HssMatrix{T}, rcl::BinaryNode{UnitRange{S}}, ccl::BinaryNode{UnitRange{S}}) where {T, S <: Integer}
+  hss_from_cluster_rec!(hssA, rcl, ccl)
+  return hssA
+end
+
+# recursive definition
+function hss_from_cluster_rec!(hssA::HssMatrix{T}, rcl::BinaryNode{UnitRange{S}}, ccl::BinaryNode{UnitRange{S}}) where {T <: Number, S <: Integer}
+  if isdefined(rcl, :left) && isdefined(ccl, :left)
+    hssA.A11 = HssMatrix{T}()
+    hss_from_cluster_rec!(hssA.A11, rcl.left, ccl.left)
+    hssA.A11.rootnode = false
+    hssA.m1 = length(rcl.left.data)
+    hssA.n1 = length(ccl.left.data)
+  elseif isdefined(rcl, :left) || isdefined(ccl, :left)
+    error("row and column cluster trees do not have matching structure")
+  end
+  if isdefined(rcl, :right) && isdefined(ccl, :right)
+    hssA.A22 = HssMatrix{T}()
+    hss_from_cluster_rec!(hssA.A22, rcl.right, ccl.right)
+    hssA.A22.rootnode = false
+    hssA.m2 = length(rcl.right.data)
+    hssA.n2 = length(ccl.right.data)
+  elseif isdefined(rcl, :right) || isdefined(ccl, :right)
+    error("row and column cluster trees do not have matching structure")
+  end
+  if !isdefined(rcl, :left) && !isdefined(rcl, :right)
+    hssA.leafnode = true
+  end
 end

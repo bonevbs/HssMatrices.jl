@@ -33,6 +33,9 @@ mutable struct HssMatrix{T<:Number}
   HssMatrix() = HssMatrix{Number}()
 end
 
+# make element type extraction work
+eltype(::Type{<:HssMatrix{T}}) where {T} = T
+
 ## Typecasting routines
 # function HssMatrix{T<:Number}(hssA::HssMatrix{S}) where S
 #   isdefined() ? HssMatrix
@@ -53,22 +56,3 @@ function Base.size(hssA::HssMatrix, dim::Integer)
     return 1
   end
 end
-
-## Optional enhancements, not entirely sure this is needed
-# These next two definitions allow inference of the item type in iteration.
-# (They are not sufficient to solve all internal inference issues, however.)
-Base.eltype(::Type{<:TreeIterator{HssMatrix{T}}}) where T = HssMatrix{T}
-Base.IteratorEltype(::Type{<:TreeIterator{HssMatrix{T}}}) where T = Base.HasEltype()
-
-function AbstractTrees.children(node::HssMatrix)
-  if isdefined(node, :A11)
-    if isdefined(node, :A22)
-      return (node.A11, node.A22)
-    end
-    return (node.A11,)
-  end
-  isdefined(node, :A11) && return (node.A22,)
-  return ()
-end
-
-AbstractTrees.printnode(io::IO, node::HssMatrix) = print(io, typeof(node))

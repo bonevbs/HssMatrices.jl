@@ -13,12 +13,12 @@ module HssMatrices
 
   export tol, reltol, leafsize
   export HssMatrix, bisection_cluster, hss_from_cluster, hss_compress_direct
-  export hss_generators
+  export generators
   export *
 
+  include("./hss_matrix.jl")
   include("./prrqr.jl")
   include("./cluster_trees.jl")
-  include("./hss_matrix.jl")
   include("./compression.jl")
   include("./generators.jl")
   include("./matmul.jl")

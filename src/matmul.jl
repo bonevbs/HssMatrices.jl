@@ -11,7 +11,7 @@ function *(hssA::HssMatrix{T}, x::Matrix{S}) where {T<:Number, S<:Number}
   if !hssA.leafnode
     if size(hssA,2) != size(x,1); error("dimensions do not match"); end
     t = hss_matvec_bottomup(hssA, x) # saves intermediate steps of multiplication in a binary tree structure
-    b = Matrix{eltype(x)}(undef,0,0)
+    b = Matrix{T}(undef,0,0)
     y = hss_matvec_topdown(hssA, x, t, b)
   else
     y = hssA.D * x
@@ -20,8 +20,8 @@ function *(hssA::HssMatrix{T}, x::Matrix{S}) where {T<:Number, S<:Number}
 end
 
 # post-ordered step of mat-vec
-function hss_matvec_bottomup(hssA::HssMatrix{T}, x::Matrix{S}) where {T<:Number, S<:Number}
-  xt = BinaryNode(Matrix{S}(undef,0,0))
+function hss_matvec_bottomup(hssA::HssMatrix{T}, x::Matrix{T}) where {T<:Number}
+  xt = BinaryNode(Matrix{T}(undef,0,0))
   if !hssA.leafnode
     xt.left = hss_matvec_bottomup(hssA.A11, x[1:hssA.n1,:])
     xt.right = hss_matvec_bottomup(hssA.A22, x[hssA.n1+1:end,:])
@@ -35,7 +35,7 @@ function hss_matvec_bottomup(hssA::HssMatrix{T}, x::Matrix{S}) where {T<:Number,
 end
 
 # pre-ordered step of mat-vec
-function hss_matvec_topdown(hssA::HssMatrix{T}, x::Matrix{S}, xt::BinaryNode{Matrix{S}}, b::Matrix{S}) where {T<:Number, S<:Number}
+function hss_matvec_topdown(hssA::HssMatrix{T}, x::Matrix{T}, xt::BinaryNode{Matrix{T}}, b::Matrix{T}) where {T<:Number}
   if !hssA.leafnode
     if hssA.rootnode
       b1 = hssA.B12 * xt.right.data
@@ -46,9 +46,9 @@ function hss_matvec_topdown(hssA::HssMatrix{T}, x::Matrix{S}, xt::BinaryNode{Mat
     end
     y1 = hss_matvec_topdown(hssA.A11, x[1:hssA.n1,:], xt.left, b1)
     y2 = hss_matvec_topdown(hssA.A22, x[hssA.n1+1:end,:], xt.right, b2)
-    y = hcat(y1, y2)
+    y = vcat(y1, y2)
   else
-    y = hssA.D * y + hssA.U * f;
+    y = hssA.D * x + hssA.U * b;
   end
   return y
 end
