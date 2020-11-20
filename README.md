@@ -6,7 +6,7 @@ This package is currently under development, use at your own risk and stay tuned
 
 ## Examples
 
-This will be updated as I go. One can construct a `Julia HssMatrix{T}` object from a dense matrix by calling
+This will be updated as I go. One can construct a `HssMatrix{T}`{:.Julia} object from a dense matrix by calling
 ```Julia
 using LinearAlgebra
 using HssMatrices
