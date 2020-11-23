@@ -16,7 +16,7 @@ hssA = HssMatrix(A)
 ```
 this will automatically build a cluster tree and compress the matrix accordingly. The compression tolerance and the minimum leaf size for the bisection cluster are stored in the global variables.
 
-# Efficient matrix-vector and matrix-matrix multiplications
+### Efficient matrix-vector and matrix-matrix multiplications
 Of course we can then perform some arithmetic using HSS matrices:
 ```Julia
 x = randn(size(hssA,2), 10);
