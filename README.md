@@ -18,12 +18,12 @@ this will automatically build a cluster tree and compress the matrix accordingly
 
 # Efficient matrix-vector and matrix-matrix multiplications
 Of course we can then perform some arithmetic using HSS matrices:
-```
+```Julia
 x = randn(size(hssA,2), 10);
 println(norm(A*x - hssA*x))
 ```
 We can also have a look at the generators and extract them via
-```
+```Julia
 U1, V2 = generators(hssA, (1,2))
 ```
 
