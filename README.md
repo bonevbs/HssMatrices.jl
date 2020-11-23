@@ -26,5 +26,9 @@ We can also have a look at the generators and extract them via
 ```Julia
 U1, V2 = generators(hssA, (1,2))
 ```
+Another important information is the maximum off-diagonal rank. We can compute it using
+```Julia
+hssrank(hssA)
+```
 
 Stay tuned! More is in the works...
