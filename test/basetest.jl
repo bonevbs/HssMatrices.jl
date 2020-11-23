@@ -33,6 +33,13 @@ println(norm(A21 - U2*hssA.B21*V1'))
 
 # test mat-vec
 x = randn(101, 2);
-println(norm(y - hssA*x));
+println(norm(A*x - hssA*x));
 
 #println(typeof(hssA)) 
+
+# test orthonormalization
+m, n = size(hssA.A11.A11.R1);
+hssA.A11.A11.R1 = randn(m, n);
+A = Matrix(hssA);
+orthonormalize_generators!(hssA)
+println(norm(A - Matrix(hssA)))

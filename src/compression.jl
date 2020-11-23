@@ -67,3 +67,17 @@ function compress_block!(A::Matrix{T}, tol; reltol) where T
   return Q[:,1:rk], R[1:rk, invperm(p)]
 end
 
+# ## Recompression algorithm
+# function hss_recompress!(hssA::HssMatrix{T}, tol=tol; reltol=reltol) where T
+#   return hssA
+# end
+
+# # recursive definition
+# function hss_recompress_rec!(hssA::HssMatrix{T}, tol=tol; reltol=reltol) where T
+#   if !hssA.leafnode
+#     hss_recompress_rec!(hssA.A11, tol; reltol)
+#     hss_recompress_rec!(hssA.A22, tol; reltol)
+#   else
+#   end
+#   return hssA
+# end

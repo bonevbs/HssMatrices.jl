@@ -56,3 +56,9 @@ function Base.size(hssA::HssMatrix, dim::Integer)
     return 1
   end
 end
+
+# typecasting to full matrix
+function Base.Matrix(hssA::HssMatrix{T}) where {T}
+  n = size(hssA,2)
+  return hssA * Matrix{T}(I, n, n)
+end

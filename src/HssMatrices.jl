@@ -2,10 +2,11 @@ __precompile__()
 module HssMatrices
 
   using LinearAlgebra
+  # using SparseArrays
   using AbstractTrees
 
   # using InvertedIndices, DataStructures
-  import Base.*
+  import Base.*, Base.Matrix
 
   global tol = 1e-9
   global reltol = true
@@ -13,7 +14,7 @@ module HssMatrices
 
   export tol, reltol, leafsize
   export HssMatrix, bisection_cluster, hss_from_cluster, hss_compress_direct
-  export generators
+  export generators, orthonormalize_generators!
   export *
 
   include("./hss_matrix.jl")
