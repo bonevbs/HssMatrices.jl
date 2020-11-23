@@ -1,3 +1,8 @@
+### Our own implementation of the rank-revealing QR factorization.
+# TODO: long-term replace this routine with something optimized, based on BLAS operations
+#
+# Written by Boris Bonev, Nov. 2020
+
 using LinearAlgebra
 
 # generate convenience access functions that copies A

@@ -1,4 +1,6 @@
 ### Functions concerning the computation and modification of generators
+#
+# Written by Boris Bonev, Nov. 2020
 
 ## Convenience access functions to construct off-diagonal blocks and tall generators
 function generators(hssA::HssMatrix{T}, ul::Tuple{S,S}) where {T, S <: Integer}

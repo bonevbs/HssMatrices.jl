@@ -1,9 +1,11 @@
 ### Defines all multiplication routines for HssMatrices
-
-## Matrix-vector multiplication
+#
+# Matrix-vector multiplication
 # as seen in
 # Chandrasekaran, S., Dewilde, P., Gu, M., Lyons, W., & Pals, T. (2006). A fast solver for HSS representations via sparse matrices.
 # SIAM Journal on Matrix Analysis and Applications, 29(1), 67–81. https://doi.org/10.1137/050639028
+#
+# Written by Boris Bonev, Nov. 2020
 
 include("./cluster_trees.jl")
 

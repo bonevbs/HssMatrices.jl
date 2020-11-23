@@ -1,3 +1,8 @@
+### Definition of Binary trees
+# This was mostly copied over from the AbstractTrees example, credits are due
+#
+# Written by Boris Bonev, Nov. 2020
+
 ## most of this is taken from the AbstractTrees example
 mutable struct BinaryNode{T}
   data::T

@@ -1,5 +1,7 @@
-## definition of datastructures
-# recursive format for HSS matrices
+### Definitions of datastructures and basic constructors and operators
+# Written by Boris Bonev, Nov. 2020
+
+# recursive structure for HSS matrices
 mutable struct HssMatrix{T<:Number}
   # 2x2 recursive block structure for branchnodes
   A11       ::HssMatrix{T}

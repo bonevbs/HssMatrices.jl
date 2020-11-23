@@ -2,7 +2,7 @@ __precompile__()
 module HssMatrices
 
   using LinearAlgebra
-  # using SparseArrays
+  using SparseArrays # introduce custom constructors from sparse matrices
   using AbstractTrees
 
   # using InvertedIndices, DataStructures

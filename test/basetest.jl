@@ -43,3 +43,5 @@ hssA.A11.A11.R1 = randn(m, n);
 A = Matrix(hssA);
 orthonormalize_generators!(hssA)
 println(norm(A - Matrix(hssA)))
+
+# test recompression

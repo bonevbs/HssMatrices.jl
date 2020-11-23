@@ -1,10 +1,20 @@
-### This File contains all compression routines
-
-## Direct compression
+### This File contains all compression routines for the HssMatrices.jl package
+#
+# Direct compression
 # as described in
 # Xia, J., Chandrasekaran, S., Gu, M., & Li, X. S. (2010). Fast algorithms for hierarchically semiseparable matrices.
 # Numerical Linear Algebra with Applications, 17(6), 953–976. https://doi.org/10.1002/nla.691
+#
+# Recompression
+#
+# Randomized compression
+# as described in
+# Martinsson, P. G. (2011). A Fast Randomized Algorithm for Computing a Hierarchically Semiseparable Representation of a Matrix.
+# SIAM Journal on Matrix Analysis and Applications, 32(4), 1251–1274. https://doi.org/10.1137/100786617
+#
+# Written by Boris Bonev, Nov. 2020
 
+## Direct compression algorithm
 # wrapper function that will be exported
 function hss_compress_direct(A::Matrix{T}, rcl::BinaryNode, ccl::BinaryNode, tol=tol; reltol=reltol) where T
   m = length(rcl.data); n = length(ccl.data)
@@ -17,6 +27,7 @@ function hss_compress_direct(A::Matrix{T}, rcl::BinaryNode, ccl::BinaryNode, tol
 end
 
 # recursive function
+# TODO: think about typestability, promotion, etc. MAYBE this needs to be modified
 function hss_compress_direct!(hssA::HssMatrix, A::Matrix{T}, Brow::Matrix{T}, Bcol::Matrix{T}, ro, co, m, n, tol; reltol) where T
   if hssA.leafnode
     hssA.D = A[ro+1:ro+m, co+1:co+n]
@@ -45,8 +56,8 @@ function hss_compress_direct!(hssA::HssMatrix, A::Matrix{T}, Brow::Matrix{T}, Bc
 
     if !hssA.rootnode
       # clean up stuff from the front and form the composed HSS block row/col for compression
-      Brow = vcat( Brow1[:, n2+1:end],  Brow2[:, rn1+1:end])
-      Bcol = hcat( Bcol1[m2+1:end, :],  Bcol2[rm1+1:end, :])
+      Brow = vcat( Brow1[:, n2+1:end],  Brow2[:, rn1+1:end] )
+      Bcol = hcat( Bcol1[m2+1:end, :],  Bcol2[rm1+1:end, :] )
 
       # do the actual compression and disentangle blocks of the translation operators
       R, Brow = compress_block!(Brow, tol; reltol)
@@ -69,15 +80,25 @@ end
 
 # ## Recompression algorithm
 # function hss_recompress!(hssA::HssMatrix{T}, tol=tol; reltol=reltol) where T
+#   # a prerequisite for this algorithm to work is that generators are orthonormal
+#   orthonormalize_generators!(hssA)
+#   # define Brow, Bcol
+#   hss_recompress_rec!(hssA, tol; reltol)
 #   return hssA
 # end
 
 # # recursive definition
-# function hss_recompress_rec!(hssA::HssMatrix{T}, tol=tol; reltol=reltol) where T
-#   if !hssA.leafnode
+# function hss_recompress_rec!(hssA::HssMatrix{T}, Brow::Matrix{T}, Bcol::Matrix{T}, tol=tol; reltol=reltol) where T
+#   if !hssA.rootnode
+#     # update HSS block row
+#     Brow1 = [hssA.B12, hssA.R1*Brow]
+#     Bcol1 = [hssA.B21; hssA.W1'*Bcol]
+
+
 #     hss_recompress_rec!(hssA.A11, tol; reltol)
 #     hss_recompress_rec!(hssA.A22, tol; reltol)
-#   else
 #   end
 #   return hssA
 # end
+
+## Randomized compression will go here...
