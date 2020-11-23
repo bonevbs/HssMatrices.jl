@@ -11,7 +11,20 @@ This will be updated as I go. One can construct a `HssMatrix{T}` object from a d
 using LinearAlgebra
 using HssMatrices
 
-A = randn(1024,1024)
+A = [ abs(i-j) for i=-1:0.02:1, j=-1:0.02:1];
 hssA = HssMatrix(A)
 ```
 this will automatically build a cluster tree and compress the matrix accordingly. The compression tolerance and the minimum leaf size for the bisection cluster are stored in the global variables.
+
+# Efficient matrix-vector and matrix-matrix multiplications
+Of course we can then perform some arithmetic using HSS matrices:
+```
+x = randn(size(hssA,2), 10);
+println(norm(A*x - hssA*x))
+```
+We can also have a look at the generators and extract them via
+```
+U1, V2 = generators(hssA, (1,2))
+```
+
+Stay tuned! More is in the works...
