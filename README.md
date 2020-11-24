@@ -11,7 +11,7 @@ This will be updated as I go. One can construct a `HssMatrix{T}` object from a d
 using LinearAlgebra
 using HssMatrices
 
-A = [ abs(i-j) for i=-1:0.02:1, j=-1:0.02:1];
+A = [ 1/(i-j) for i=-1:0.02:1, j=-1:0.02:1];
 hssA = HssMatrix(A)
 ```
 this will automatically build a cluster tree and compress the matrix accordingly. The compression tolerance and the minimum leaf size for the bisection cluster are stored in the global variables.
