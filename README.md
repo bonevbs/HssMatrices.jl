@@ -31,4 +31,12 @@ Another important information is the maximum off-diagonal rank. We can compute i
 hssrank(hssA)
 ```
 
+### Recompression
+Basic arithmetic on hierarchical matrices requires frequent recompression of the matrices in order to guarantee that the matrices remain efficient. This is implemented in src/compression.jl via the `recompress!` routine. This is done via the rank-revealing QR decomposition to ensure efficiency. Note: our implementation of the rank-revealing QR decomposition is not optimized as of now!
+
+Recompression can be done by simply calling the constructor on an `HssMatrix{T}` object, alternatively specifying a new compression tolerance:
+```Julia
+hssA = HssMatrix(hssA, tol=1e-3)
+```
+
 Stay tuned! More is in the works...
