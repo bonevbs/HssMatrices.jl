@@ -38,6 +38,6 @@ Recompression can be done by simply calling the constructor on an `HssMatrix{T}`
 ```Julia
 hssA = HssMatrix(hssA, tol=1e-3)
 ```
-All compression is handled in the sense that individual HSS block rows and columns approximate the original matrix A such that the tolerance is below `tol`.
+All compression is handled in the sense that individual HSS block rows and columns approximate the original matrix A such that the tolerance is below `tol` for this block. Similarly, if `reltol` is set to `true`, each of the blocks will be compressed in the sense that the individual block is well-approximated in the relative sense.
 
 Stay tuned! More is in the works...
