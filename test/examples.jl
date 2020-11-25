@@ -48,3 +48,6 @@ println(norm(A - Matrix(hssA)))
 println("approximation error before recompression: ", norm(A - Matrix(A)))
 hss_recompress!(hssA,1e-1; reltol=false)
 println("approximation error after recompression: ", norm(A - Matrix(A)))
+
+# test plotting
+plotranks(hssA)
