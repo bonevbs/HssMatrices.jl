@@ -9,6 +9,7 @@
 
 include("./cluster_trees.jl")
 
+## Multiplication with vectors/matrices
 function *(hssA::HssMatrix{T}, x::Matrix{S}) where {T<:Number, S<:Number}
   if !hssA.leafnode
     if size(hssA,2) != size(x,1); error("dimensions do not match"); end
@@ -19,6 +20,10 @@ function *(hssA::HssMatrix{T}, x::Matrix{S}) where {T<:Number, S<:Number}
     y = hssA.D * x
   end
   return y
+end
+
+function *(hssA::HssMatrix{T}, x::Vector{S}) where {T<:Number, S<:Number}
+  return hssA * reshape(x, length(x), 1)
 end
 
 # post-ordered step of mat-vec

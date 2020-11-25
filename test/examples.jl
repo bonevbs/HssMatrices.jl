@@ -11,7 +11,7 @@ Q,R,p = HssMatrices.prrqr(A,1e-3);
 norm(A[:,p] - Q[:,1:size(R,1)]*R)
 
 # test basic hss functionality
-A = [ abs(i-j) for i=-1:0.02:1.2, j=-1:0.02:1];
+A = [ abs(i-j) for i=-1:0.02:1, j=-1:0.02:1];
 
 # test the simple implementation of cluster trees
 m, n = size(A)
@@ -45,3 +45,6 @@ orthonormalize_generators!(hssA)
 println(norm(A - Matrix(hssA)))
 
 # test recompression
+println("approximation error before recompression: ", norm(A - Matrix(A)))
+hss_recompress!(hssA,1e-1; reltol=false)
+println("approximation error after recompression: ", norm(A - Matrix(A)))
