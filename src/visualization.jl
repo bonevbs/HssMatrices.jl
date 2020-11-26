@@ -29,7 +29,7 @@ end
 function plotranks(hssA::HssMatrix)
   m,n = size(hssA)
   aspect = m/n
-  plot(yflip=true, showaxis=false, size = (600, 600*aspect))
+  plot(yflip=true, showaxis=false, size = (400, 400*aspect))
   xticks = [1]; yticks = [1]
   yticks, xticks = _plotranks!(hssA,1,1,yticks,xticks)
   append!(yticks, m+1)
