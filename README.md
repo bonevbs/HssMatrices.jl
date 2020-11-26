@@ -34,7 +34,7 @@ Alternatively, we can visualize the clustering and the off-diagonal ranks by cal
 ```Julia
 plotranks(hssA)
 ```
-![Plotranks](./img/plotranks.svg =200x200)
+![Plotranks](./img/plotranks.svg)
 
 ### Compression/Recompression
 Basic arithmetic on hierarchical matrices requires frequent recompression of the matrices in order to guarantee that the matrices remain efficient. This is implemented in src/compression.jl via the `recompress!` routine. This is done via the rank-revealing QR decomposition to ensure efficiency. Note: our implementation of the rank-revealing QR decomposition is not optimized as of now!
