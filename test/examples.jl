@@ -50,4 +50,4 @@ hss_recompress!(hssA,1e-1; reltol=false)
 println("approximation error after recompression: ", norm(A - Matrix(A)))
 
 # test plotting
-plotranks(hssA)
+fn = plotranks(hssA)
