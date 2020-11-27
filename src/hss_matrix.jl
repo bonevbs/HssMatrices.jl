@@ -46,7 +46,7 @@ eltype(::Type{<:HssMatrix{T}}) where {T} = T
 ## Overriding some standard routines
 
 # Base.size
-Base.size(hssA::HssMatrix) = hssA.leafnode ? size(hssA.D) : hssA.m1+hssA.m2, hssA.n1+hssA.n2
+Base.size(hssA::HssMatrix) = hssA.leafnode ? size(hssA.D) : (hssA.m1+hssA.m2, hssA.n1+hssA.n2)
 function Base.size(hssA::HssMatrix, dim::Integer)
   if dim == 1
     return hssA.m1+hssA.m2

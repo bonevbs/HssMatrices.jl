@@ -80,6 +80,7 @@ function hss_from_cluster_rec!(hssA::HssMatrix{T}, rcl::BinaryNode{UnitRange{S}}
     hssA.A11 = HssMatrix{T}()
     hss_from_cluster_rec!(hssA.A11, rcl.left, ccl.left)
     hssA.A11.rootnode = false
+    hssA.leafnode = false
     hssA.m1 = length(rcl.left.data)
     hssA.n1 = length(ccl.left.data)
   elseif isdefined(rcl, :left) || isdefined(ccl, :left)
@@ -89,6 +90,7 @@ function hss_from_cluster_rec!(hssA::HssMatrix{T}, rcl::BinaryNode{UnitRange{S}}
     hssA.A22 = HssMatrix{T}()
     hss_from_cluster_rec!(hssA.A22, rcl.right, ccl.right)
     hssA.A22.rootnode = false
+    hssA.leafnode = false
     hssA.m2 = length(rcl.right.data)
     hssA.n2 = length(ccl.right.data)
   elseif isdefined(rcl, :right) || isdefined(ccl, :right)
@@ -96,5 +98,6 @@ function hss_from_cluster_rec!(hssA::HssMatrix{T}, rcl::BinaryNode{UnitRange{S}}
   end
   if !isdefined(rcl, :left) && !isdefined(rcl, :right)
     hssA.leafnode = true
+    hssA.rootnode = false
   end
 end

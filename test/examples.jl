@@ -10,12 +10,12 @@ A = U * V';
 Q,R,p = HssMatrices.prrqr(A,1e-3);
 norm(A[:,p] - Q[:,1:size(R,1)]*R)
 
-# test basic hss functionality
-A = [ abs(i-j) for i=-1:0.02:1, j=-1:0.02:1];
+# generate Cauchy matrix
+A = [ abs(i-j) for i=-1:0.001:1, j=-1:0.001:1];
 
 # test the simple implementation of cluster trees
 m, n = size(A)
-lsz = 10;
+lsz = 32;
 rcl = bisection_cluster(1:m, lsz)
 ccl = bisection_cluster(1:n, lsz)
 # print_tree(rcl)
@@ -32,17 +32,10 @@ A21 = A[hssA.m1+1:end,1:hssA.n1];
 println(norm(A21 - U2*hssA.B21*V1'))
 
 # test mat-vec
-x = randn(101, 2);
+x = randn(size(A,2), 3);
 println(norm(A*x - hssA*x));
 
 #println(typeof(hssA)) 
-
-# test orthonormalization
-m, n = size(hssA.A11.A11.R1);
-hssA.A11.A11.R1 = randn(m, n);
-A = Matrix(hssA);
-orthonormalize_generators!(hssA)
-println(norm(A - Matrix(hssA)))
 
 # test recompression
 println("approximation error before recompression: ", norm(A - Matrix(A)))

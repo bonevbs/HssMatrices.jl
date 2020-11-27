@@ -18,7 +18,7 @@ module HssMatrices
 
   export prrqr!, truncate_block!
   export tol, reltol, leafsize
-  export HssMatrix, bisection_cluster, hss_from_cluster, hss_compress_direct, hss_recompress!
+  export HssMatrix, bisection_cluster, hss_from_cluster!, hss_compress_direct, hss_recompress!
   export hssrank
   export generators, orthonormalize_generators!
   export *
