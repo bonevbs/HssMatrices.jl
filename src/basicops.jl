@@ -1,4 +1,5 @@
 ### Some basic operations for HSS matrices
+# Written by Boris Bonev, Nov. 2020
 
 ## Scalar multiplication comes here
 

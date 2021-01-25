@@ -19,7 +19,7 @@
 
 ## Direct compression algorithm
 # wrapper function that will be exported
-function hss_compress_direct(A::Matrix{T}, rcl::BinaryNode, ccl::BinaryNode, tol=tol; reltol=reltol) where T
+function hss_compress_direct(A::Matrix{T}, rcl::BinaryNode, ccl::BinaryNode, tol=tol; reltol=reltol) where {T}
   m = length(rcl.data); n = length(ccl.data)
   hssA = HssMatrix{T}(); hssA.rootnode = true;
   hssA = hss_from_cluster!(hssA, rcl, ccl)
@@ -31,7 +31,7 @@ end
 
 # recursive function
 # TODO: think about typestability, promotion, etc. MAYBE this needs to be modified
-function hss_compress_direct!(hssA::HssMatrix, A::Matrix{T}, Brow::Matrix{T}, Bcol::Matrix{T}, ro, co, m, n, tol; reltol) where T
+function hss_compress_direct!(hssA::HssMatrix, A::Matrix{T}, Brow::Matrix{T}, Bcol::Matrix{T}, ro::Integer, co::Integer, m::Integer, n::Integer, tol; reltol) where {T}
   if hssA.leafnode
     hssA.D = A[ro+1:ro+m, co+1:co+n]
     # compress HSS block row/col
@@ -45,7 +45,7 @@ function hss_compress_direct!(hssA::HssMatrix, A::Matrix{T}, Brow::Matrix{T}, Bc
     Bcol1 = vcat(A[ro+m1+1:ro+m1+m2, co+1:co+n1], Bcol[:, 1:n1])
     Brow1, Bcol1 = hss_compress_direct!(hssA.A11, A, Brow1, Bcol1, ro, co, m1, n1, tol; reltol)
     
-    # form blocks to be compressed in the children stepnull
+    # form blocks to be compressed in the children step
     Brow2 = hcat(Bcol1[1:m2, :], Brow[m1+1:end, :])
     Bcol2 = vcat(Brow1[:, 1:n2], Bcol[:, n1+1:end])
     Brow2, Bcol2 = hss_compress_direct!(hssA.A22, A, Brow2, Bcol2, ro+m1, co+n1, m2, n2, tol; reltol)
@@ -75,14 +75,15 @@ function hss_compress_direct!(hssA::HssMatrix, A::Matrix{T}, Brow::Matrix{T}, Bc
   return Brow, Bcol
 end
 
-function compress_block!(A::Matrix{T}, tol; reltol) where T
+function compress_block!(A::Matrix{T}, tol; reltol) where {T}
+  B = copy(A)
   Q, R, p = prrqr!(A, tol; reltol)
-  rk = size(R,1);
+  rk = min(size(R)...)
   return Q[:,1:rk], R[1:rk, invperm(p)]
 end
 
 ## Recompression algorithm
-function hss_recompress!(hssA::HssMatrix{T}, tol=tol; reltol=reltol) where T
+function hss_recompress!(hssA::HssMatrix{T}, tol=tol; reltol=reltol) where {T}
   if hssA.leafnode; return hssA; end
   # a prerequisite for this algorithm to work is that generators are orthonormal
   orthonormalize_generators!(hssA)
@@ -93,7 +94,7 @@ function hss_recompress!(hssA::HssMatrix{T}, tol=tol; reltol=reltol) where T
 end
 
 # recursive definition
-function hss_recompress_rec!(hssA::HssMatrix{T}, Brow::Matrix{T}, Bcol::Matrix{T}, tol=tol; reltol=reltol) where T
+function hss_recompress_rec!(hssA::HssMatrix{T}, Brow::Matrix{T}, Bcol::Matrix{T}, tol=tol; reltol=reltol) where {T}
   if hssA.leafnode; error("recompression called on a leafnode"); end
   if hssA.rootnode
     # compress B12, B21 via something that resembles the SVD

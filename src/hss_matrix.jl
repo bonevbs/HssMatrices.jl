@@ -1,7 +1,7 @@
 ### Definitions of datastructures and basic constructors and operators
 # Written by Boris Bonev, Nov. 2020
 
-# recursive structure for HSS matrices
+# simple, recursive structure for HSS matrices
 mutable struct HssMatrix{T<:Number}
   # 2x2 recursive block structure for branchnodes
   A11       ::HssMatrix{T}
@@ -32,7 +32,7 @@ mutable struct HssMatrix{T<:Number}
 
   # inner constructor
   HssMatrix{T}() where T = new{T}()
-  HssMatrix() = HssMatrix{Number}()
+  HssMatrix() = HssMatrix{Float64}()
 end
 
 # make element type extraction work
@@ -64,3 +64,5 @@ function Base.Matrix(hssA::HssMatrix{T}) where {T}
   n = size(hssA,2)
   return hssA * Matrix{T}(I, n, n)
 end
+
+# alternatively we can form the full matrix in a more straight-forward fashion
