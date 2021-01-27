@@ -33,14 +33,14 @@ function _plotranks!(hssA::HssMatrix, co, ro, cticks, rticks, level; cl=4)
   return rticks, cticks
 end
 
-function plotranks(hssA::HssMatrix; cutoff_level=4)
+function plotranks(hssA::HssMatrix; cutoff_level=3)
   m,n = size(hssA)
   aspect = m/n
   plot(yflip=true, showaxis=false, size = (400, 400*aspect))
   xticks = [1]; yticks = [1]
   yticks, xticks = _plotranks!(hssA,1,1,xticks,yticks,0;cl=cutoff_level)
-  append!(yticks, m+1)
-  append!(xticks, n+1)
+  append!(yticks, n+1)
+  append!(xticks, m+1)
   plot!(aspect_ratio=:equal)
   plot_ref = plot!(xticks=xticks, yticks=yticks, xmirror=true)
   return plot_ref

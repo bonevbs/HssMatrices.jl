@@ -45,8 +45,8 @@ mutable struct ULVFactor{T<:Number}
 end
 #ULVFactor(L, U, V) = ULVFactor{typeof(data)}(data)
 
-function ulvfactor(hssA::HssMatrix{T}) where T
-end
+#function ulvfactor(hssA::HssMatrix{T}) where T
+#end
 
 
 # write routine for multiplication with ULVFactor
@@ -74,7 +74,7 @@ function _ulvfactsolve!(hssA::HssMatrix{T}, b::Matrix{T}, z::Matrix{T}, ro::Int,
     nk = min(m-k,n)
     ind = 1:m-k
     cind = m-k+1:m
-    rows = co .+ (1:n)
+    cols = co .+ (1:n)
     # can't be compressed, exit early
     if k >= m
       u = zeros(m, size(b,2))
@@ -97,13 +97,13 @@ function _ulvfactsolve!(hssA::HssMatrix{T}, b::Matrix{T}, z::Matrix{T}, ro::Int,
       # pass on uncompressed parts of the problem
       D = L2[:,nk+1:end]
       V = V[nk+1:end,:]
-      z[rows[ind], :] = zloc
-      ulvA.QV = lqf; ulvA.oind = rows
+      z[cols[ind], :] = zloc
+      ulvA.QV = lqf; ulvA.oind = cols
     end
   else
     b1 = b[1:hssA.m1, :]; b2 = b[hssA.m1+1:end, :]
-    b1, u1, D1, U1, V1, rows1, nk1, ulvA1 = _ulvfactsolve!(hssA.A11, b1, z, ro, co)
-    b2, u2, D2, U2, V2, rows2, nk2, ulvA2 = _ulvfactsolve!(hssA.A22, b2, z, ro+hssA.m1, co+hssA.n1)
+    b1, u1, D1, U1, V1, cols1, nk1, ulvA1 = _ulvfactsolve!(hssA.A11, b1, z, ro, co)
+    b2, u2, D2, U2, V2, cols2, nk2, ulvA2 = _ulvfactsolve!(hssA.A22, b2, z, ro+hssA.m1, co+hssA.n1)
     ulvA = ULVFactor(ulvA1, ulvA2)
 
     # merge nodes to form new diagonal block 
@@ -111,7 +111,7 @@ function _ulvfactsolve!(hssA::HssMatrix{T}, b::Matrix{T}, z::Matrix{T}, ro::Int,
     D = [D1 U1*hssA.B12*V2'; U2*hssA.B21*V1' D2]
     m, n = size(D)
     m1 = hssA.m1; n1 = hssA.n1; m2 = hssA.m2; n2 = hssA.n2
-    rows = [rows1[nk1+1:end]; rows2[nk2+1:end]] # to re-adjust local numbering
+    cols = [cols1[nk1+1:end]; cols2[nk2+1:end]] # to re-adjust local numbering
 
     # early exit if topnode
     if !hssA.rootnode
@@ -144,16 +144,16 @@ function _ulvfactsolve!(hssA::HssMatrix{T}, b::Matrix{T}, z::Matrix{T}, ro::Int,
         D = L2[:, nk+1:end]
         V = V[nk+1:end,:]
         # Prepare things to pass on
-        z[rows[ind], :] = zloc
-        ulvA.QV = lqf; ulvA.oind = rows
+        z[cols[ind], :] = zloc
+        ulvA.QV = lqf; ulvA.oind = cols
       end
     else
-      z[rows, :] = D\b
+      z[cols, :] = D\b
       _ulvsolve_topdown!(ulvA, z)
       u = 0; U = 0; V = 0; nk = 0
     end
   end
-  return b, u, D, U, V, rows, nk, ulvA
+  return b, u, D, U, V, cols, nk, ulvA
 end
 
 function _ulvsolve_topdown!(ulvA::ULVFactor{T}, z::Matrix{T}) where T
@@ -166,3 +166,11 @@ function _ulvsolve_topdown!(ulvA::ULVFactor{T}, z::Matrix{T}) where T
     _ulvsolve_topdown!(ulvA.right, z)
   end
 end
+
+
+# temporary name for function that actually just computes the ULV factorization
+# function hssdivide(hssA::HssMatrix{T}, hssB::HssMatrix{T}) where T
+# end
+
+# function _hssdivide(hssA::HssMatrix{T})
+# end

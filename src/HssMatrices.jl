@@ -14,7 +14,7 @@ module HssMatrices
   using Plots # in the future, move to RecipesBase
 
   # using InvertedIndices, DataStructures
-  import Base.*, Base.Matrix
+  import Base.*, Base.+, Base.Matrix, Base.copy
 
   global tol = 1e-9
   global reltol = true

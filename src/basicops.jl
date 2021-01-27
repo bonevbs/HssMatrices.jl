@@ -4,7 +4,7 @@
 ## Scalar multiplication comes here
 
 ## hssrank based on the sizes of generators
-function hssrank(hssA::HssMatrix{T}) where {T}
+function hssrank(hssA::HssMatrix{T}) where T
   if hssA.leafnode
     rk = 0
   else
@@ -12,3 +12,8 @@ function hssrank(hssA::HssMatrix{T}) where {T}
   end
   return rk
 end
+
+## summing in place
+#function sum!(hssA::HssMatrix{T})
+  
+#end
