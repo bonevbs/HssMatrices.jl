@@ -13,7 +13,6 @@ function hssrank(hssA::HssMatrix{T}) where T
   return rk
 end
 
-## summing in place
-#function sum!(hssA::HssMatrix{T})
-  
-#end
+## adds hssB to hssA in place
++(A::HssMatrix,B::Matrix) = +(promote(A,B)...)
++(A::Matrix,B::HssMatrix) = +(promote(A,B)...)

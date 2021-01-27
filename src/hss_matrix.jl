@@ -2,7 +2,7 @@
 # Written by Boris Bonev, Nov. 2020
 
 ## data structure
-mutable struct HssMatrix{T<:Number}
+mutable struct HssMatrix{T<:Number} <: AbstractMatrix{T}
   # 2x2 recursive block structure for branchnodes
   A11       ::HssMatrix{T}
   A22       ::HssMatrix{T}
@@ -32,14 +32,14 @@ mutable struct HssMatrix{T<:Number}
 
   # inner constructor
   HssMatrix{T}() where T = new{T}()
-  HssMatrix() = HssMatrix{Float64}()
 end
 
 # make element type extraction work
-eltype(::Type{<:HssMatrix{T}}) where {T} = T
+eltype(::Type{HssMatrix{T}}) where {T} = T
 
 ## copy operators
-function copy(hssA::HssMatrix{T}) where T
+# maybe this should be called deepcopy?
+function copy(hssA::HssMatrix{T}) where {T}
   hssB = HssMatrix{T}()
 
   if isdefined(hssA, :A11); hssB.A11 = copy(hssA.A11); end
@@ -67,6 +67,9 @@ function copy(hssA::HssMatrix{T}) where T
   return(hssB)
 end
 
+## conversion
+#convert(::HssMatrix{T}, hssA::HssMatrix) where {T} = HssMatrix()
+
 ## Typecasting routines
 # function HssMatrix{T<:Number}(hssA::HssMatrix{S}) where S
 #   isdefined() ? HssMatrix
@@ -88,8 +91,8 @@ function Base.size(hssA::HssMatrix, dim::Integer)
   end
 end
 
-# typecasting to full matrix
-function Base.Matrix(hssA::HssMatrix{T}) where T
+# construct full matrix from HSS
+function Base.Matrix(hssA::HssMatrix{T}) where {T}
   n = size(hssA,2)
   return hssA * Matrix{T}(I, n, n)
 end

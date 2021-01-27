@@ -8,18 +8,18 @@
 rectangle(w, h, x, y) = Shape([0,w,w,0] .+ x , [0,0,h,h] .+ y)
 
 # recursive plotting routine
-function _plotranks!(hssA::HssMatrix, co, ro, cticks, rticks, level; cl=4)
+function _plotranks!(hssA::HssMatrix, co, ro, cticks, rticks, level, cl)
   if hssA.leafnode
     m, n = size(hssA.D)
     plot!(rectangle(n,m,co,ro), color=:tomato, label=false)
   else
     # plot diagonal blocks and ticks
-    _plotranks!(hssA.A11, co, ro, cticks, rticks, level+1)
+    _plotranks!(hssA.A11, co, ro, cticks, rticks, level+1, cl)
     if level < cl
       append!(rticks, ro+hssA.m1)
       append!(cticks, co+hssA.n1)
     end
-    _plotranks!(hssA.A22, co+hssA.n1, ro+hssA.m1, cticks, rticks, level+1)
+    _plotranks!(hssA.A22, co+hssA.n1, ro+hssA.m1, cticks, rticks, level+1, cl)
     # plot off-diagonal blocks
     plot!(rectangle(hssA.n2, hssA.m1, co+hssA.n1, ro), color=:aliceblue, label=false)
     if level < cl
@@ -38,7 +38,7 @@ function plotranks(hssA::HssMatrix; cutoff_level=3)
   aspect = m/n
   plot(yflip=true, showaxis=false, size = (400, 400*aspect))
   xticks = [1]; yticks = [1]
-  yticks, xticks = _plotranks!(hssA,1,1,xticks,yticks,0;cl=cutoff_level)
+  yticks, xticks = _plotranks!(hssA,1,1,xticks,yticks,0,cutoff_level)
   append!(yticks, n+1)
   append!(xticks, m+1)
   plot!(aspect_ratio=:equal)
