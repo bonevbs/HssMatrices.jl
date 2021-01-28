@@ -12,20 +12,16 @@ using Plots
 # norm(A[:,p] - Q[:,1:size(R,1)]*R)
 
 # generate Cauchy matrix
-# K(x,y) = (x-y) != 0 ? 1/(x-y) : 10000.
-# A = [ K(x,y) for x=-1:0.0005:1, y=-1:0.0005:1];
-# b = randn(size(A,2), 5);
-#b = zeros(size(A,2), 5);
-#b[1:5,1:5] = Matrix(I, 5, 5)
+K(x,y) = (x-y) != 0 ? 1/(x-y) : 10000.
+A = [ K(x,y) for x=-1:0.0005:1, y=-1:0.0005:1];
+b = randn(size(A,2), 5);
 
 # test the simple implementation of cluster trees
-# m, n = size(A)
-# lsz = 64;
-# rcl = bisection_cluster(1:m, lsz)
-# ccl = bisection_cluster(1:n, lsz)
-# print_tree(rcl)
-#ccl.left.left.data = 1:700
-#ccl.left.right.data = 701:1001
+m, n = size(A)
+lsz = 64;
+rcl = bisection_cluster(1:m, lsz)
+ccl = bisection_cluster(1:n, lsz)
+print_tree(rcl)
 
 # test compression
 # hssA = hss_compress_direct(A, rcl, ccl);

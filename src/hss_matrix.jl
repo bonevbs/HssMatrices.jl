@@ -1,5 +1,5 @@
 ### Definitions of datastructures and basic constructors and operators
-# Written by Boris Bonev, Nov. 2020
+# Written by Boris Bonev, Jan. 2021
 
 ## new datastructure which splits the old one into two parts to avoid unnecessary allocations
 # definition of leaf nodes
@@ -47,16 +47,17 @@ mutable struct HssNode{T<:Number} #<: AbstractMatrix{T}
   end
 end
 
-HssNode(A11::Union{HssLeaf{T}, HssNode{T}}, A22::Union{HssLeaf{T}, HssNode{T}}, B12::Matrix{T}, B21::Matrix{T}, ::Nothing, ::Nothing, ::Nothing, ::Nothing) = HssNode(A11, A22, B12, B21)
+HssNode(A11::Union{HssLeaf, HssNode}, A22::Union{HssLeaf, HssNode}, B12::Matrix, B21::Matrix, ::Nothing, ::Nothing, ::Nothing, ::Nothing) = HssNode(A11, A22, B12, B21)
 
-
+# convenience alias (maybe unnecessary)
 const HssMatrix{T} = Union{HssLeaf{T}, HssNode{T}}
 
 
-# # make element type extraction work
-eltype(::Type{HssMatrix{T}}) where T = T
+# make element type extraction work
+Base.eltype(::Type{HssLeaf{T}}) where T = T
+Base.eltype(::Type{HssNode{T}}) where T = T
 
-# ## copy operators
+## copy operators
 Base.copy(hssA::HssLeaf) = HssLeaf{eltype(hssA)}(copy(hssA.D), copy(hssA.U), copy(hssA.V))
 Base.copy(hssA::HssNode) = HssNode{eltype(hssA)}(copy(hssA.A11), copy(hssA.A22), copy(hssA.B12), copy(hssA.B21), copy(R1), copy(W1), copy(R2), copy(W2))
 
@@ -76,9 +77,8 @@ Base.size(hssA::HssNode) = hssA.sz1 .+ hssA.sz2
 Base.size(hssA::HssMatrix, dim::Integer) = size(hssA)[dim]
 
 # Base.show
-function Base.show(io::IO, hssA::HssMatrix)
-  print(io, "$(size(hssA)).")
-end
+Base.show(io::IO, hssA::HssLeaf) = print(io, "$(size(hssA)) HssLeaf{$(eltype(hssA))}")
+Base.show(io::IO, hssA::HssNode) = print(io, "$(size(hssA)) HssNode{$(eltype(hssA))}")
 
 ## HSS specific routines
 hssrank(hssA::HssLeaf) = 0

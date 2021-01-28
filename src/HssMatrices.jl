@@ -20,10 +20,13 @@ module HssMatrices
   global reltol = true
   global leafsize = 32
 
-  export HssLeaf, HssNode
-
-  #export prrqr!, truncate_block!
   #export tol, reltol, leafsize
+  # hss_matrix.jl
+  export HssLeaf, HssNode, HssMatrix
+  # prrqr.jl
+  export prrqr!, truncate_block!
+  # binarytree.jl and clustertree.jl
+  export BinaryNode, bisection_cluster
   #export HssMatrix, bisection_cluster, hss_from_cluster!, hss_compress_direct, hss_recompress!
   #export hssrank
   #export generators, orthonormalize_generators!
@@ -33,7 +36,7 @@ module HssMatrices
 
   include("hss_matrix.jl")
   include("prrqr.jl")
-  # include("cluster_trees.jl")
+  include("clustertree.jl")
   # include("compression.jl")
   # include("basicops.jl")
   # include("generators.jl")
