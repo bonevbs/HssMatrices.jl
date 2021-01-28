@@ -49,10 +49,13 @@ end
 
 # convenience alias (maybe unnecessary)
 const HssMatrix{T} = Union{HssLeaf{T}, HssNode{T}}
-isleaf(hssA::HssLeaf) = true
-isleaf(hssA::HssNode) = false
-isbranch(hssA::HssLeaf) = false
-isbranch(hssA::HssNode) = true
+isleaf(hssA::HssMatrix) = typeof(hssA) <: HssLeaf
+isbranch(hssA::HssMatrix) = typeof(hssA) <: HssNode
+
+#isleaf(hssA::HssLeaf) = true
+#isleaf(hssA::HssNode) = false
+#isbranch(hssA::HssLeaf) = false
+#isbranch(hssA::HssNode) = true
 
 ## Base overrides
 Base.eltype(::Type{HssLeaf{T}}) where T = T
@@ -62,19 +65,11 @@ Base.size(hssA::HssLeaf) = size(hssA.D)
 Base.size(hssA::HssNode) = hssA.sz1 .+ hssA.sz2
 Base.size(hssA::HssMatrix, dim::Integer) = size(hssA)[dim]
 
-Base.show(io::IO, hssA::HssLeaf) = print(io, "$(size(hssA)) HssLeaf{$(eltype(hssA))}")
-Base.show(io::IO, hssA::HssNode) = print(io, "$(size(hssA)) HssNode{$(eltype(hssA))}")
+Base.show(io::IO, hssA::HssLeaf) = print(io, "$(size(hssA,1))x$(size(hssA,2)) HssLeaf{$(eltype(hssA))}")
+Base.show(io::IO, hssA::HssNode) = print(io, "$(size(hssA,1))x$(size(hssA,2)) HssNode{$(eltype(hssA))}")
 
 Base.copy(hssA::HssLeaf) = HssLeaf{eltype(hssA)}(copy(hssA.D), copy(hssA.U), copy(hssA.V))
 Base.copy(hssA::HssNode) = HssNode{eltype(hssA)}(copy(hssA.A11), copy(hssA.A22), copy(hssA.B12), copy(hssA.B21), copy(R1), copy(W1), copy(R2), copy(W2))
-
-# ## conversion
-# #convert(::HssMatrix{T}, hssA::HssMatrix) where {T} = HssMatrix()
-
-# ## Typecasting routines
-# # function HssMatrix{T<:Number}(hssA::HssMatrix{S}) where S
-# #   isdefined() ? HssMatrix
-# # end
 
 ## HSS specific routines
 hssrank(hssA::HssLeaf) = 0

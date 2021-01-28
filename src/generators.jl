@@ -35,7 +35,7 @@ function orthonormalize_generators!(hssA::HssLeaf{T}) where T
   return hssA
 end
 
-function orthonormalize_generators!(hssA::HssMatrix{T}) where T
+function orthonormalize_generators!(hssA::HssNode{T}) where T
   if isleaf(hssA.A11)
     U1 = qr(hssA.A11.U); hssA.A11.U = Matrix(U1.Q)
     V1 = qr(hssA.A11.V); hssA.A11.V = Matrix(V1.Q)

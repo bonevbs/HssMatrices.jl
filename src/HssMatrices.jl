@@ -22,21 +22,19 @@ module HssMatrices
 
   #export tol, reltol, leafsize
   # hss_matrix.jl
-  export HssLeaf, HssNode, HssMatrix
+  export HssLeaf, HssNode, HssMatrix, isleaf, isbranch, hssrank
   # prrqr.jl
   export prrqr!, truncate_block!
   # binarytree.jl and clustertree.jl
   export BinaryNode, leftchild, rightchild, isleaf, isbranch, bisection_cluster
   # compression.jl
-  export hss_compress_direct
+  export hss_compress_direct, hss_recompress!
   # generators.jl  
   export generators, orthonormalize_generators!
 
 
-  #export HssMatrix, bisection_cluster, hss_from_cluster!, hss_compress_direct, hss_recompress!
-  #export hssrank
+  #export HssMatrix, bisection_cluster, hss_from_cluster!, hss_compress_direct, hss_recompress! 
   #export generators, orthonormalize_generators!
-  #export *
   #export ulvfactor, ulvsolve, ulvfactsolve, ULVFactor
   #export plotranks, pcolor
 

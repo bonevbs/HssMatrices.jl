@@ -103,120 +103,116 @@ function _compress_direct!(A::Matrix{T}, Brow::Matrix{T}, Bcol::Matrix{T}, rcl::
   return hssA, Brow, Bcol
 end
 
-# ## Recompression algorithm
-# function hss_recompress!(hssA::HssMatrix{T}; tol=tol, reltol=reltol) where T
+## Recompression algorithm
+function hss_recompress!(hssA::HssMatrix{T}; tol=tol, reltol=reltol) where T
+  if isleaf(hssA); return hssA; end
 
-# end
+  # a prerequisite for this algorithm to work is that generators are orthonormal
+  orthonormalize_generators!(hssA)
 
+  # compress B12, B21 via something that resembles the SVD
+  P1, S2 = _compress_block!(hssA.B12; tol, reltol)
+  Q2, T1 = _compress_block!(copy(hssA.B12'); tol, reltol)
+  P2, S1 = _compress_block!(hssA.B21; tol, reltol)
+  Q1, T2 = _compress_block!(copy(hssA.B21'); tol, reltol)
 
+  hssA.B12 = S2*Q2
+  hssA.B21 = S1*Q1
 
+  # pass information to children and proceed recursively
+  if isbranch(hssA.A11)
+    hssA.A11.R1 = hssA.A11.R1*P1
+    hssA.A11.R2 = hssA.A11.R2*P1
+    hssA.A11.W1 = hssA.A11.W1*Q1
+    hssA.A11.W2 = hssA.A11.W2*Q1
+  elseif isleaf(hssA.A11)
+    hssA.A11.U = hssA.A11.U*P1
+    hssA.A11.V = hssA.A11.V*Q1
+  end
+  # repeat for A22
+  if isbranch(hssA.A22)
+    hssA.A22.R1 = hssA.A22.R1*P2
+    hssA.A22.R2 = hssA.A22.R2*P2
+    hssA.A22.W1 = hssA.A22.W1*Q2
+    hssA.A22.W2 = hssA.A22.W2*Q2
+  elseif isleaf(hssA.A22)
+    hssA.A22.U = hssA.A22.U*P2
+    hssA.A22.V = hssA.A22.V*Q2
+  end
 
-# function hss_recompress!(hssA::HssMatrix{T}, tol=tol; reltol=reltol) where {T}
-#   if hssA.leafnode; return hssA; end
-#   # a prerequisite for this algorithm to work is that generators are orthonormal
-#   orthonormalize_generators!(hssA)
-#   # define Brow, Bcol
-#   Brow = Array{T}(undef, 0, 0)
-#   Bcol = Array{T}(undef, 0, 0)
-#   hss_recompress_rec!(hssA, Brow, Bcol, tol; reltol)
-# end
+  # call recompression recursively
+  if isbranch(hssA.A11)
+    _recompress!(hssA.A11, hssA.B12, copy(hssA.B21'); tol, reltol)
+  end
+  if isbranch(hssA.A22)
+    _recompress!(hssA.A22, hssA.B21, copy(hssA.B12'); tol, reltol)
+  end
 
-# # recursive definition
-# function hss_recompress_rec!(hssA::HssMatrix{T}, Brow::Matrix{T}, Bcol::Matrix{T}, tol=tol; reltol=reltol) where {T}
-#   if hssA.leafnode; error("recompression called on a leafnode"); end
-#   if hssA.rootnode
-#     # compress B12, B21 via something that resembles the SVD
-#     P1, S2 = compress_block!(hssA.B12, tol; reltol)
-#     Q2, T1 = compress_block!(copy(hssA.B12'), tol; reltol)
-#     P2, S1 = compress_block!(hssA.B21, tol; reltol)
-#     Q1, T2 = compress_block!(copy(hssA.B21'), tol; reltol)
+  # fix dimensions of ghost-translators in rootnode
+  # hssA.R1 = hssA.R1[1:size(hssA.B12, 1),:]
+  # hssA.W1 = hssA.R1[1:size(hssA.B21, 2),:]
+  # hssA.R2 = hssA.R1[1:size(hssA.B21, 1),:]
+  # hssA.W2 = hssA.R1[1:size(hssA.B12, 2),:]
 
-#     hssA.B12 = S2*Q2
-#     hssA.B21 = S1*Q1
+  return hssA
+end
 
-#     # pass information to children and proceed recursively
-#     if !hssA.A11.leafnode
-#       hssA.A11.R1 = hssA.A11.R1*P1
-#       hssA.A11.R2 = hssA.A11.R2*P1
-#       hssA.A11.W1 = hssA.A11.W1*Q1
-#       hssA.A11.W2 = hssA.A11.W2*Q1
-#     else
-#       hssA.A11.U = hssA.A11.U*P1
-#       hssA.A11.V = hssA.A11.V*Q1
-#     end
-#     # repeat for A22
-#     if !hssA.A22.leafnode
-#       hssA.A22.R1 = hssA.A22.R1*P2
-#       hssA.A22.R2 = hssA.A22.R2*P2
-#       hssA.A22.W1 = hssA.A22.W1*Q2
-#       hssA.A22.W2 = hssA.A22.W2*Q2
-#     else
-#       hssA.A22.U = hssA.A22.U*P2
-#       hssA.A22.V = hssA.A22.V*Q2
-#     end
+function _recompress!(hssA::HssNode{T}, Brow::Matrix{T}, Bcol::Matrix{T}; tol=tol, reltol=reltol) where T
+  # compress B12
+  Brow1 = [hssA.B12  hssA.R1*Brow]
+  Bcol2 = [hssA.B12' hssA.W2*Bcol]
+  P1, S2 = _compress_block!(Brow1; tol, reltol)
+  Q2, T1 = _compress_block!(Bcol2; tol, reltol)
+  # get the original number of columns in B12
+  rm1, rn2 = size(hssA.B12)
+  hssA.B12 = S2[:,1:rn2]*Q2
+  Brow1 = S2[:, rn2+1:end]
+  Bcol2 = T1[:, rm1+1:end]
+  # compress B21
+  Brow2 = [hssA.B21  hssA.R2*Brow]
+  Bcol1 = [hssA.B21' hssA.W1*Bcol]
+  P2, S1 = _compress_block!(Brow2; tol, reltol)
+  Q1, T2 = _compress_block!(Bcol1; tol, reltol)
+  # get the original number of columns in B21
+  rm2, rn1 = size(hssA.B21)
+  hssA.B21 = S1[:,1:rn1]*Q1
+  Brow2 = S1[:,rn1+1:end]
+  Bcol1 = T2[:, rm2+1:end]
 
-#     # call recompression recursively
-#     if !hssA.A11.leafnode
-#       hss_recompress_rec!(hssA.A11, hssA.B12, copy(hssA.B21'), tol; reltol)
-#     end
-#     if !hssA.A22.leafnode
-#       hss_recompress_rec!(hssA.A22, hssA.B21, copy(hssA.B12'), tol; reltol)
-#     end
-#   else
-#     # compress B12
-#     Brow1 = hcat(hssA.B12, hssA.R1*Brow)
-#     Bcol2 = hcat(hssA.B12', hssA.W2*Bcol)
-#     P1, S2 = compress_block!(Brow1, tol; reltol)
-#     Q2, T1 = compress_block!(Bcol2, tol; reltol)
-#     # get the original number of columns in B12
-#     rm1, rn2 = size(hssA.B12)
-#     hssA.B12 = S2[:,1:rn2]*Q2
-#     Brow1 = S2[:, rn2+1:end]
-#     Bcol2 = T1[:, rm1+1:end]
-#     # compress B21
-#     Brow2 = hcat(hssA.B21, hssA.R2*Brow)
-#     Bcol1 = hcat(hssA.B21', hssA.W1*Bcol)
-#     P2, S1 = compress_block!(Brow2, tol; reltol)
-#     Q1, T2 = compress_block!(Bcol1, tol; reltol)
-#     # get the original number of columns in B21
-#     rm2, rn1 = size(hssA.B21)
-#     hssA.B21 = S1[:,1:rn1]*Q1
-#     Brow2 = S1[:,rn1+1:end]
-#     Bcol1 = T2[:, rm2+1:end]
+  # update generators of A11
+  if isbranch(hssA.A11)
+    hssA.A11.R1 = hssA.A11.R1*P1
+    hssA.A11.R2 = hssA.A11.R2*P1
+    hssA.A11.W1 = hssA.A11.W1*Q1
+    hssA.A11.W2 = hssA.A11.W2*Q1
+  elseif isleaf(hssA.A11)
+    hssA.A11.U = hssA.A11.U*P1
+    hssA.A11.V = hssA.A11.V*Q1
+  end
+  # update generators in A22
+  if isbranch(hssA.A22)
+    hssA.A22.R1 = hssA.A22.R1*P2
+    hssA.A22.R2 = hssA.A22.R2*P2
+    hssA.A22.W1 = hssA.A22.W1*Q2
+    hssA.A22.W2 = hssA.A22.W2*Q2
+  else isleaf(hssA.A22)
+    hssA.A22.U = hssA.A22.U*P2
+    hssA.A22.V = hssA.A22.V*Q2
+  end
 
-#     # update generators of A11
-#     if !hssA.A11.leafnode
-#       hssA.A11.R1 = hssA.A11.R1*P1
-#       hssA.A11.R2 = hssA.A11.R2*P1
-#       hssA.A11.W1 = hssA.A11.W1*Q1
-#       hssA.A11.W2 = hssA.A11.W2*Q1
-#     else
-#       hssA.A11.U = hssA.A11.U*P1
-#       hssA.A11.V = hssA.A11.V*Q1
-#     end
-#     # update generators in A22
-#     if !hssA.A22.leafnode
-#       hssA.A22.R1 = hssA.A22.R1*P2
-#       hssA.A22.R2 = hssA.A22.R2*P2
-#       hssA.A22.W1 = hssA.A22.W1*Q2
-#       hssA.A22.W2 = hssA.A22.W2*Q2
-#     else
-#       hssA.A22.U = hssA.A22.U*P2
-#       hssA.A22.V = hssA.A22.V*Q2
-#     end
+  # call recompression recursively
+  if isbranch(hssA.A11)
+    Brow1 = hcat(hssA.B12, S2[:,rn2+1:end])
+    Bcol1 = hcat(hssA.B21', T2[:,rm2+1:end])
+    _recompress!(hssA.A11, Brow1, Bcol1; tol, reltol)
+  end
+  if isbranch(hssA.A22)
+    Brow2 = hcat(hssA.B21, S1[:,rn1+1:end])
+    Bcol2 = hcat(hssA.B12', T1[:,rm1+1:end])
+    _recompress!(hssA.A22, Brow2, Bcol2; tol, reltol)
+  end
 
-#     # call recompression recursively
-#     if !hssA.A11.leafnode
-#       Brow1 = hcat(hssA.B12, S2[:,rn2+1:end])
-#       Bcol1 = hcat(hssA.B21', T2[:,rm2+1:end])
-#       hss_recompress_rec!(hssA.A11, Brow1, Bcol1, tol; reltol)
-#     end
-#     if !hssA.A22.leafnode
-#       Brow2 = hcat(hssA.B21, S1[:,rn1+1:end])
-#       Bcol2 = hcat(hssA.B12', T1[:,rm1+1:end])
-#       hss_recompress_rec!(hssA.A22, Brow2, Bcol2, tol; reltol)
-#     end
-#   end
-# end
+  return hssA
+end
 
 # ## Randomized compression will go here...
