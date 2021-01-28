@@ -31,7 +31,7 @@ mutable struct HssNode{T<:Number} #<: AbstractMatrix{T}
   R2 ::Union{Matrix{T}, Nothing}
   W2 ::Union{Matrix{T}, Nothing}
 
-  # constructors
+  # internal constructors with checks for dimensions
   function HssNode(A11::Union{HssLeaf{T}, HssNode{T}}, A22::Union{HssLeaf{T}, HssNode{T}}, B12::Matrix{T}, B21::Matrix{T}) where T
     new{T}(A11, A22, B12, B21, size(A11), size(A22), nothing, nothing, nothing, nothing)
   end
@@ -47,17 +47,25 @@ mutable struct HssNode{T<:Number} #<: AbstractMatrix{T}
   end
 end
 
+# exterior constructors
 HssNode(A11::Union{HssLeaf, HssNode}, A22::Union{HssLeaf, HssNode}, B12::Matrix, B21::Matrix, ::Nothing, ::Nothing, ::Nothing, ::Nothing) = HssNode(A11, A22, B12, B21)
+# TODO: add constructors that use compression methods
 
 # convenience alias (maybe unnecessary)
 const HssMatrix{T} = Union{HssLeaf{T}, HssNode{T}}
 
 
-# make element type extraction work
+## Base overrides
 Base.eltype(::Type{HssLeaf{T}}) where T = T
 Base.eltype(::Type{HssNode{T}}) where T = T
 
-## copy operators
+Base.size(hssA::HssLeaf) = size(hssA.D)
+Base.size(hssA::HssNode) = hssA.sz1 .+ hssA.sz2
+Base.size(hssA::HssMatrix, dim::Integer) = size(hssA)[dim]
+
+Base.show(io::IO, hssA::HssLeaf) = print(io, "$(size(hssA)) HssLeaf{$(eltype(hssA))}")
+Base.show(io::IO, hssA::HssNode) = print(io, "$(size(hssA)) HssNode{$(eltype(hssA))}")
+
 Base.copy(hssA::HssLeaf) = HssLeaf{eltype(hssA)}(copy(hssA.D), copy(hssA.U), copy(hssA.V))
 Base.copy(hssA::HssNode) = HssNode{eltype(hssA)}(copy(hssA.A11), copy(hssA.A22), copy(hssA.B12), copy(hssA.B21), copy(R1), copy(W1), copy(R2), copy(W2))
 
@@ -68,17 +76,6 @@ Base.copy(hssA::HssNode) = HssNode{eltype(hssA)}(copy(hssA.A11), copy(hssA.A22),
 # # function HssMatrix{T<:Number}(hssA::HssMatrix{S}) where S
 # #   isdefined() ? HssMatrix
 # # end
-
-# ## Overriding some standard routines
-
-# Base.size
-Base.size(hssA::HssLeaf) = size(hssA.D)
-Base.size(hssA::HssNode) = hssA.sz1 .+ hssA.sz2
-Base.size(hssA::HssMatrix, dim::Integer) = size(hssA)[dim]
-
-# Base.show
-Base.show(io::IO, hssA::HssLeaf) = print(io, "$(size(hssA)) HssLeaf{$(eltype(hssA))}")
-Base.show(io::IO, hssA::HssNode) = print(io, "$(size(hssA)) HssNode{$(eltype(hssA))}")
 
 ## HSS specific routines
 hssrank(hssA::HssLeaf) = 0
