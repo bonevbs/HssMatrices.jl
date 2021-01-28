@@ -28,6 +28,9 @@ function rightchild(data, parent::BinaryNode)
   parent.right = node
 end
 
+isleaf(node::BinaryNode) = !isdefined(node, :left) && !isdefined(node, :right)
+isbranch(node::BinaryNode) = isdefined(node, :left) && isdefined(node, :right)
+
 function AbstractTrees.children(node::BinaryNode)
   if isdefined(node, :left)
     if isdefined(node, :right)

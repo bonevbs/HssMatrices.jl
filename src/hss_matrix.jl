@@ -26,29 +26,25 @@ mutable struct HssNode{T<:Number} #<: AbstractMatrix{T}
   sz1 ::Tuple{Int, Int}
   sz2 ::Tuple{Int, Int}
 
-  R1 ::Union{Matrix{T}, Nothing}
-  W1 ::Union{Matrix{T}, Nothing}
-  R2 ::Union{Matrix{T}, Nothing}
-  W2 ::Union{Matrix{T}, Nothing}
+  R1 ::Matrix{T}
+  W1 ::Matrix{T}
+  R2 ::Matrix{T}
+  W2 ::Matrix{T}
 
   # internal constructors with checks for dimensions
   function HssNode(A11::Union{HssLeaf{T}, HssNode{T}}, A22::Union{HssLeaf{T}, HssNode{T}}, B12::Matrix{T}, B21::Matrix{T}) where T
-    new{T}(A11, A22, B12, B21, size(A11), size(A22), nothing, nothing, nothing, nothing)
+    new{T}(A11, A22, B12, B21, size(A11), size(A22), Matrix{Float64}(undef,size(A11,1),0), Matrix{Float64}(undef,size(A11,2),0), Matrix{Float64}(undef,size(A22,1),0), Matrix{Float64}(undef,size(A22,2),0))
   end
   function HssNode(A11::Union{HssLeaf{T}, HssNode{T}}, A22::Union{HssLeaf{T}, HssNode{T}}, B12::Matrix{T}, B21::Matrix{T}, 
     R1::Matrix{T}, W1::Matrix{T}, R2::Matrix{T}, W2::Matrix{T}) where T
-    if size(R1,2) == size(R2,2) throw(ArgumentError("R1 and R2 must have same number of columns")) end
-    if size(W1,2) == size(W2,2) throw(ArgumentError("W1 and W2 must have same number of rows")) end
-    if size(A11,1) != size(R1,1) throw(ArgumentError("A11 and R1 must have same number of rows")) end
-    if size(A22,1) != size(R2,1) throw(ArgumentError("A22 and R2 must have same number of rows")) end
-    if size(A11,2) != size(W1,1) throw(ArgumentError("A11 and W1 must have same number of columns")) end
-    if size(A22,2) != size(W2,1) throw(ArgumentError("A22 and W2 must have same number of columns")) end
+    if size(R1,2) != size(R2,2) throw(ArgumentError("R1 and R2 must have same number of columns")) end
+    if size(W1,2) != size(W2,2) throw(ArgumentError("W1 and W2 must have same number of rows")) end
     new{T}(A11, A22, B12, B21, size(A11), size(A22), R1, W1, R2, W2)
   end
 end
 
 # exterior constructors
-HssNode(A11::Union{HssLeaf, HssNode}, A22::Union{HssLeaf, HssNode}, B12::Matrix, B21::Matrix, ::Nothing, ::Nothing, ::Nothing, ::Nothing) = HssNode(A11, A22, B12, B21)
+#HssNode(A11::Union{HssLeaf, HssNode}, A22::Union{HssLeaf, HssNode}, B12::Matrix, B21::Matrix, ::Nothing, ::Nothing, ::Nothing, ::Nothing) = HssNode(A11, A22, B12, B21)
 # TODO: add constructors that use compression methods
 
 # convenience alias (maybe unnecessary)
