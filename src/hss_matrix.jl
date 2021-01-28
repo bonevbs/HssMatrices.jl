@@ -49,7 +49,10 @@ end
 
 # convenience alias (maybe unnecessary)
 const HssMatrix{T} = Union{HssLeaf{T}, HssNode{T}}
-
+isleaf(hssA::HssLeaf) = true
+isleaf(hssA::HssNode) = false
+isbranch(hssA::HssLeaf) = false
+isbranch(hssA::HssNode) = true
 
 ## Base overrides
 Base.eltype(::Type{HssLeaf{T}}) where T = T

@@ -15,7 +15,15 @@
 # Martinsson, P. G. (2011). A Fast Randomized Algorithm for Computing a Hierarchically Semiseparable Representation of a Matrix.
 # SIAM Journal on Matrix Analysis and Applications, 32(4), 1251–1274. https://doi.org/10.1137/100786617
 #
-# Written by Boris Bonev, Nov. 2020
+# Re-Written by Boris Bonev, Jan. 2021
+
+# Utility routine to provide access to pivoted rank-revealing qr
+function _compress_block!(A::Matrix{T}; tol, reltol) where T
+  B = copy(A)
+  Q, R, p = prrqr!(A, tol; reltol)
+  rk = min(size(R)...)
+  return Q[:,1:rk], R[1:rk, invperm(p)]
+end
 
 ## Direct compression algorithm
 # wrapper function that will be exported
@@ -41,6 +49,7 @@ function _compress_direct!(A::Matrix{T}, Brow::Matrix{T}, Bcol::Matrix{T}, rows:
   return HssLeaf(A[rows, cols], U, V), Brow, copy(Bcol')
 end
 
+# branch node function for compression
 function _compress_direct!(A::Matrix{T}, Brow::Matrix{T}, Bcol::Matrix{T}, rcl::ClusterTree, ccl::ClusterTree; tol, reltol) where T
   m1 = length(rcl.left.data); m2 = length(rcl.right.data)
   n1 = length(ccl.left.data); n2 = length(ccl.right.data)
@@ -94,60 +103,14 @@ function _compress_direct!(A::Matrix{T}, Brow::Matrix{T}, Bcol::Matrix{T}, rcl::
   return hssA, Brow, Bcol
 end
 
-# # recursive function
-# # TODO: think about typestability, promotion, etc. MAYBE this needs to be modified
-# function hss_compress_direct!(hssA::HssMatrix, A::Matrix{T}, Brow::Matrix{T}, Bcol::Matrix{T}, ro::Integer, co::Integer, m::Integer, n::Integer, tol; reltol) where {T}
-#   if hssA.leafnode
-#     hssA.D = A[ro+1:ro+m, co+1:co+n]
-#     # compress HSS block row/col
-#     hssA.U, Brow = compress_block!(Brow, tol; reltol)
-#     hssA.V, Bcol = compress_block!(copy(Bcol'), tol; reltol); Bcol = copy(Bcol') # quick fix to avoid Julia's lazy transpose
-#   else
-#     m1 = hssA.m1; n1 = hssA.n1; m2 = hssA.m2; n2 = hssA.n2
+# ## Recompression algorithm
+# function hss_recompress!(hssA::HssMatrix{T}; tol=tol, reltol=reltol) where T
 
-#     # form blocks to be compressed in the children step
-#     Brow1 = hcat(A[ro+1:ro+m1, co+n1+1:co+n1+n2], Brow[1:m1, :]) #FIXME: rootnode?
-#     Bcol1 = vcat(A[ro+m1+1:ro+m1+m2, co+1:co+n1], Bcol[:, 1:n1])
-#     Brow1, Bcol1 = hss_compress_direct!(hssA.A11, A, Brow1, Bcol1, ro, co, m1, n1, tol; reltol)
-    
-#     # form blocks to be compressed in the children step
-#     Brow2 = hcat(Bcol1[1:m2, :], Brow[m1+1:end, :])
-#     Bcol2 = vcat(Brow1[:, 1:n2], Bcol[:, n1+1:end])
-#     Brow2, Bcol2 = hss_compress_direct!(hssA.A22, A, Brow2, Bcol2, ro+m1, co+n1, m2, n2, tol; reltol)
-
-#     # figure out dimensions of reduced blocks
-#     rm1 = size(Brow1,1); rn1 = size(Bcol1, 2)
-#     rm2 = size(Brow2,1); rn2 = size(Bcol2, 2)
-
-#     hssA.B12 = Bcol2[1:rm1, :]
-#     hssA.B21 = Brow2[:, 1:rn1]
-
-#     if !hssA.rootnode
-#       # clean up stuff from the front and form the composed HSS block row/col for compression
-#       Brow = vcat(Brow1[:, n2+1:end],  Brow2[:, rn1+1:end])
-#       Bcol = hcat(Bcol1[m2+1:end, :],  Bcol2[rm1+1:end, :])
-
-#       # do the actual compression and disentangle blocks of the translation operators
-#       R, Brow = compress_block!(Brow, tol; reltol)
-#       hssA.R1 = R[1:rm1, :]
-#       hssA.R2 = R[rm1+1:end, :]
-    
-#       W, Bcol = compress_block!(copy(Bcol'), tol; reltol); Bcol = copy(Bcol')
-#       hssA.W1 = W[1:rn1, :]
-#       hssA.W2 = W[rn1+1:end, :]
-#     end
-#   end
-#   return Brow, Bcol
 # end
 
-function _compress_block!(A::Matrix{T}; tol, reltol) where T
-  B = copy(A)
-  Q, R, p = prrqr!(A, tol; reltol)
-  rk = min(size(R)...)
-  return Q[:,1:rk], R[1:rk, invperm(p)]
-end
 
-# ## Recompression algorithm
+
+
 # function hss_recompress!(hssA::HssMatrix{T}, tol=tol; reltol=reltol) where {T}
 #   if hssA.leafnode; return hssA; end
 #   # a prerequisite for this algorithm to work is that generators are orthonormal
@@ -256,4 +219,4 @@ end
 #   end
 # end
 
-## Randomized compression will go here...
+# ## Randomized compression will go here...
