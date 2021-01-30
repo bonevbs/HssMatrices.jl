@@ -80,3 +80,11 @@ function orthonormalize_generators!(hssA::HssNode{T}) where T
 
   return hssA
 end
+
+full(hssA::HssMatrix) = _full(hssA)[1]
+_full(hssA::HssLeaf{T}) where T = hssA.D, hssA.U, hssA.V
+function _full(hssA::HssNode{T}) where T
+  A11, U1, V1 = _full(hssA.A11)
+  A22, U2, V2 = _full(hssA.A22)
+  return [A11 U1*hssA.B12*V2'; U2*hssA.B21*V1' A22], [U1*hssA.R1; U2*hssA.R2], [V1*hssA.W1; V2*hssA.W2]
+end

@@ -27,6 +27,11 @@ hssA = hss_compress_direct(A, rcl, ccl);
 
 @time hssA = hss_compress_direct(A, rcl, ccl);
 
+# test recompression
+println("approximation error before recompression: ", norm(A - full(hssA)))
+hss_recompress!(hssA; tol=1e-1, reltol=false)
+println("approximation error after recompression: ", norm(A - full(hssA)))
+
 # test the ULV based solver
 # x = ulvfactsolve(hssA, b);
 # xcor = A\b;
@@ -46,11 +51,6 @@ hssA = hss_compress_direct(A, rcl, ccl);
 # println(norm(A*x - hssA*x));
 
 # #println(typeof(hssA)) 
-
-# # test recompression
-# println("approximation error before recompression: ", norm(A - Matrix(A)))
-# hss_recompress!(hssA,1e-1; reltol=false)
-# println("approximation error after recompression: ", norm(A - Matrix(A)))
 
 # test the ULV based solver
 # x = ulvfactsolve(hssA, b);

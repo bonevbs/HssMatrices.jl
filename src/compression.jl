@@ -17,6 +17,8 @@
 #
 # Re-Written by Boris Bonev, Jan. 2021
 
+using Infiltrator
+
 # Utility routine to provide access to pivoted rank-revealing qr
 function _compress_block!(A::Matrix{T}; tol, reltol) where T
   B = copy(A)
@@ -118,6 +120,16 @@ function hss_recompress!(hssA::HssMatrix{T}; tol=tol, reltol=reltol) where T
 
   hssA.B12 = S2*Q2
   hssA.B21 = S1*Q1
+  #hssA.R1 = P1'*hssA.R1
+  #hssA.W1 = Q1'*hssA.W1
+  #hssA.R2 = P2'*hssA.R2
+  #hssA.W2 = Q2'*hssA.W2
+
+  # fix dimensions of ghost-translators in rootnode
+  hssA.R1 = hssA.R1[1:size(hssA.B12, 1),:]
+  hssA.W1 = hssA.R1[1:size(hssA.B21, 2),:]
+  hssA.R2 = hssA.R1[1:size(hssA.B21, 1),:]
+  hssA.W2 = hssA.R1[1:size(hssA.B12, 2),:]
 
   # pass information to children and proceed recursively
   if isbranch(hssA.A11)
@@ -148,12 +160,6 @@ function hss_recompress!(hssA::HssMatrix{T}; tol=tol, reltol=reltol) where T
     _recompress!(hssA.A22, hssA.B21, copy(hssA.B12'); tol, reltol)
   end
 
-  # fix dimensions of ghost-translators in rootnode
-  # hssA.R1 = hssA.R1[1:size(hssA.B12, 1),:]
-  # hssA.W1 = hssA.R1[1:size(hssA.B21, 2),:]
-  # hssA.R2 = hssA.R1[1:size(hssA.B21, 1),:]
-  # hssA.W2 = hssA.R1[1:size(hssA.B12, 2),:]
-
   return hssA
 end
 
@@ -166,8 +172,8 @@ function _recompress!(hssA::HssNode{T}, Brow::Matrix{T}, Bcol::Matrix{T}; tol=to
   # get the original number of columns in B12
   rm1, rn2 = size(hssA.B12)
   hssA.B12 = S2[:,1:rn2]*Q2
-  Brow1 = S2[:, rn2+1:end]
-  Bcol2 = T1[:, rm1+1:end]
+  hssA.R1 = P1'*hssA.R1
+  hssA.W2 = Q2'*hssA.W2
   # compress B21
   Brow2 = [hssA.B21  hssA.R2*Brow]
   Bcol1 = [hssA.B21' hssA.W1*Bcol]
@@ -176,9 +182,8 @@ function _recompress!(hssA::HssNode{T}, Brow::Matrix{T}, Bcol::Matrix{T}; tol=to
   # get the original number of columns in B21
   rm2, rn1 = size(hssA.B21)
   hssA.B21 = S1[:,1:rn1]*Q1
-  Brow2 = S1[:,rn1+1:end]
-  Bcol1 = T2[:, rm2+1:end]
-
+  hssA.R2 = P2'*hssA.R2
+  hssA.W1 = Q1'*hssA.W1
   # update generators of A11
   if isbranch(hssA.A11)
     hssA.A11.R1 = hssA.A11.R1*P1
@@ -202,11 +207,15 @@ function _recompress!(hssA::HssNode{T}, Brow::Matrix{T}, Bcol::Matrix{T}; tol=to
 
   # call recompression recursively
   if isbranch(hssA.A11)
+    Brow1 = S2[:, rn2+1:end]
+    Bcol1 = T2[:, rm2+1:end]
     Brow1 = hcat(hssA.B12, S2[:,rn2+1:end])
     Bcol1 = hcat(hssA.B21', T2[:,rm2+1:end])
     _recompress!(hssA.A11, Brow1, Bcol1; tol, reltol)
   end
   if isbranch(hssA.A22)
+    Brow2 = S1[:,rn1+1:end]
+    Bcol2 = T1[:, rm1+1:end]
     Brow2 = hcat(hssA.B21, S1[:,rn1+1:end])
     Bcol2 = hcat(hssA.B12', T1[:,rm1+1:end])
     _recompress!(hssA.A22, Brow2, Bcol2; tol, reltol)

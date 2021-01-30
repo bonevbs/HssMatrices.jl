@@ -30,7 +30,7 @@ module HssMatrices
   # compression.jl
   export hss_compress_direct, hss_recompress!
   # generators.jl  
-  export generators, orthonormalize_generators!
+  export generators, orthonormalize_generators!, full
 
 
   #export HssMatrix, bisection_cluster, hss_from_cluster!, hss_compress_direct, hss_recompress! 
