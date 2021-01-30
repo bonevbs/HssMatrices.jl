@@ -207,15 +207,11 @@ function _recompress!(hssA::HssNode{T}, Brow::Matrix{T}, Bcol::Matrix{T}; tol=to
 
   # call recompression recursively
   if isbranch(hssA.A11)
-    Brow1 = S2[:, rn2+1:end]
-    Bcol1 = T2[:, rm2+1:end]
     Brow1 = hcat(hssA.B12, S2[:,rn2+1:end])
     Bcol1 = hcat(hssA.B21', T2[:,rm2+1:end])
     _recompress!(hssA.A11, Brow1, Bcol1; tol, reltol)
   end
   if isbranch(hssA.A22)
-    Brow2 = S1[:,rn1+1:end]
-    Bcol2 = T1[:, rm1+1:end]
     Brow2 = hcat(hssA.B21, S1[:,rn1+1:end])
     Bcol2 = hcat(hssA.B12', T1[:,rm1+1:end])
     _recompress!(hssA.A22, Brow2, Bcol2; tol, reltol)
