@@ -49,7 +49,7 @@ end
 
 # convenience alias (maybe unnecessary)
 const HssMatrix{T} = Union{HssLeaf{T}, HssNode{T}}
-isleaf(hssA::HssMatrix) = typeof(hssA) <: HssLeaf
+isleaf(hssA::HssMatrix) = typeof(hssA) <: HssLeaf # check whether making this inline speeds up things ?
 isbranch(hssA::HssMatrix) = typeof(hssA) <: HssNode
 
 #isleaf(hssA::HssLeaf) = true

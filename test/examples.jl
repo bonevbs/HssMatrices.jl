@@ -31,6 +31,7 @@ hssA = hss_compress_direct(A, rcl, ccl);
 println("approximation error before recompression: ", norm(A - full(hssA)))
 hss_recompress!(hssA; tol=1e-1, reltol=false)
 println("approximation error after recompression: ", norm(A - full(hssA)))
+@time hss_recompress!(hssA; tol=1e-1, reltol=false)
 
 # test the ULV based solver
 # x = ulvfactsolve(hssA, b);
