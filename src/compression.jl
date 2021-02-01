@@ -120,10 +120,6 @@ function hss_recompress!(hssA::HssMatrix{T}; tol=tol, reltol=reltol) where T
 
   hssA.B12 = S2*Q2
   hssA.B21 = S1*Q1
-  #hssA.R1 = P1'*hssA.R1
-  #hssA.W1 = Q1'*hssA.W1
-  #hssA.R2 = P2'*hssA.R2
-  #hssA.W2 = Q2'*hssA.W2
 
   # fix dimensions of ghost-translators in rootnode
   hssA.R1 = hssA.R1[1:size(hssA.B12, 1),:]

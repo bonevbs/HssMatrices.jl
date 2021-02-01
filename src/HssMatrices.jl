@@ -31,6 +31,10 @@ module HssMatrices
   export hss_compress_direct, hss_recompress!
   # generators.jl  
   export generators, orthonormalize_generators!, full
+  # matmul.jl
+  # ulvfactor.jl
+  # visualization.jl
+  #export plotranks
 
 
   #export HssMatrix, bisection_cluster, hss_from_cluster!, hss_compress_direct, hss_recompress! 
@@ -44,8 +48,8 @@ module HssMatrices
   include("clustertree.jl")
   include("compression.jl")
   include("generators.jl")
+  include("matmul.jl")
   # include("basicops.jl")
-  # include("matmul.jl")
   # include("ulvfactor.jl")
   # include("visualization.jl")
 end

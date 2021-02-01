@@ -7,55 +7,44 @@
 #
 # Written by Boris Bonev, Nov. 2020
 
-include("./cluster_trees.jl")
+## PROMOTOE - look at LowRankApprox again
+## TODO: read about promotion and improve the code
+
+# not sure this is needed
+if !isdefined(@__MODULE__, :BinaryNode)
+  include("binarytree.jl")
+end
 
 ## Multiplication with vectors/matrices
-function *(hssA::HssMatrix{T}, x::Matrix{S}) where {T<:Number, S<:Number}
-  if !hssA.leafnode
-    if size(hssA,2) != size(x,1); error("dimensions do not match"); end
-    t = hss_matvec_bottomup(hssA, x) # saves intermediate steps of multiplication in a binary tree structure
-    b = Matrix{T}(undef,0,0)
-    y = hss_matvec_topdown(hssA, x, t, b)
-  else
-    y = hssA.D * x
-  end
-  return y
+*(hssA::HssLeaf, x::Matrix) = hssA.D * x
+function *(hssA::HssNode, x::Matrix)
+  if size(hssA,2) != size(x,1); error("dimensions do not match"); end
+  z = _matvecup(hssA, x) # saves intermediate steps of multiplication in a binary tree structure
+  b = Matrix{eltype(x)}(undef,0,size(x,2))
+  return _matvecdown(hssA, x, z, b)
 end
 
-function *(hssA::HssMatrix{T}, x::Vector{S}) where {T<:Number, S<:Number}
-  return hssA * reshape(x, length(x), 1)
-end
+*(hssA::HssMatrix, x::Vector) = hssA * reshape(x, length(x), 1)
 
+## auxiliary functions for the fast multiplication algorithm
 # post-ordered step of mat-vec
-function hss_matvec_bottomup(hssA::HssMatrix{T}, x::Matrix{T}) where {T<:Number}
-  xt = BinaryNode(Matrix{T}(undef,0,0))
-  if !hssA.leafnode
-    xt.left = hss_matvec_bottomup(hssA.A11, x[1:hssA.n1,:])
-    xt.right = hss_matvec_bottomup(hssA.A22, x[hssA.n1+1:end,:])
-    if !hssA.rootnode
-      xt.data = hssA.W1' * xt.left.data + hssA.W2' * xt.right.data
-    end
-  else
-    xt.data = hssA.V' * x
-  end
-  return xt
+_matvecup(hssA::HssLeaf{T}, x::Matrix{T}) where T = BinaryNode{Matrix{T}}(hssA.V' * x)
+function _matvecup(hssA::HssNode{T}, x::Matrix{T}) where T
+  n1 = hssA.sz1[2]
+  zl = _matvecup(hssA.A11, x[1:n1,:])
+  zr = _matvecup(hssA.A22, x[n1+1:end,:])
+  z = BinaryNode{Matrix{T}}(hssA.W1' * zl.data + hssA.W2' * zr.data)
+  z.left = zl
+  z.right = zr
+  return z
 end
 
-# pre-ordered step of mat-vec
-function hss_matvec_topdown(hssA::HssMatrix{T}, x::Matrix{T}, xt::BinaryNode{Matrix{T}}, b::Matrix{T}) where {T<:Number}
-  if !hssA.leafnode
-    if hssA.rootnode
-      b1 = hssA.B12 * xt.right.data
-      b2 = hssA.B21 * xt.left.data
-    else
-      b1 = hssA.B12 * xt.right.data + hssA.R1 * b
-      b2 = hssA.B21 * xt.left.data + hssA.R2 * b
-    end
-    y1 = hss_matvec_topdown(hssA.A11, x[1:hssA.n1,:], xt.left, b1)
-    y2 = hss_matvec_topdown(hssA.A22, x[hssA.n1+1:end,:], xt.right, b2)
-    y = vcat(y1, y2)
-  else
-    y = hssA.D * x + hssA.U * b;
-  end
-  return y
+_matvecdown(hssA::HssLeaf{T}, x::Matrix{T}, z::BinaryNode{Matrix{T}}, b::Matrix{T}) where T = hssA.D * x + hssA.U * b;
+function _matvecdown(hssA::HssNode{T}, x::Matrix{T}, z::BinaryNode{Matrix{T}}, b::Matrix{T}) where T
+  n1 = hssA.sz1[2]
+  b1 = hssA.B12 * z.right.data + hssA.R1 * b
+  b2 = hssA.B21 * z.left.data + hssA.R2 * b
+  y1 = _matvecdown(hssA.A11, x[1:n1,:], z.left, b1)
+  y2 = _matvecdown(hssA.A22, x[n1+1:end,:], z.right, b2)
+  return [y1; y2]
 end

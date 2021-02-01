@@ -28,10 +28,14 @@ hssA = hss_compress_direct(A, rcl, ccl);
 @time hssA = hss_compress_direct(A, rcl, ccl);
 
 # test recompression
-println("approximation error before recompression: ", norm(A - full(hssA)))
-hss_recompress!(hssA; tol=1e-1, reltol=false)
-println("approximation error after recompression: ", norm(A - full(hssA)))
-@time hss_recompress!(hssA; tol=1e-1, reltol=false)
+# println("approximation error before recompression: ", norm(A - full(hssA)))
+# hss_recompress!(hssA; tol=1e-1, reltol=false)
+# println("approximation error after recompression: ", norm(A - full(hssA)))
+# @time hss_recompress!(hssA; tol=1e-1, reltol=false)
+
+# test mat-vec
+x = randn(size(A,2), 3);
+println(norm(A*x - hssA*x));
 
 # test the ULV based solver
 # x = ulvfactsolve(hssA, b);
@@ -47,9 +51,6 @@ println("approximation error after recompression: ", norm(A - full(hssA)))
 # A21 = A[hssA.m1+1:end,1:hssA.n1];|
 # println(norm(A21 - U2*hssA.B21*V1'))
 
-# # test mat-vec
-# x = randn(size(A,2), 3);
-# println(norm(A*x - hssA*x));
 
 # #println(typeof(hssA)) 
 
