@@ -39,6 +39,7 @@ println("error in the matrix-vector products: ", norm(A*x - hssA*x))
 # test the ULV based solver
 b = randn(size(A,2), 5);
 x = ulvfactsolve(hssA, b);
+@time x = ulvfactsolve(hssA, b);
 xcor = A\b;
 println("error in the inversion: ", norm(x-xcor)/norm(xcor))
 
