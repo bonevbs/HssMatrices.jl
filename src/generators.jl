@@ -1,6 +1,6 @@
 ### Functions concerning the computation and modification of generators
 #
-# Written by Boris Bonev, Nov. 2020
+# Re-Written by Boris Bonev, Jan. 2021
 
 ## Convenience access functions to construct off-diagonal blocks and tall generators
 function generators(hssA::HssMatrix{T}, ul::Tuple{S,S}) where {T, S <: Integer}
@@ -21,21 +21,22 @@ function generators(hssA::HssMatrix{T}, ul::Tuple{S,S}) where {T, S <: Integer}
 end
 
 # recursive function to compute the generators corresponding to this subblock
-function generators(hssA::HssMatrix{T}) where T
-  if hssA.leafnode
-    return hssA.U, hssA.V
-  else
-    U1, V1 = generators(hssA.A11)
-    U2, V2 = generators(hssA.A22)
-    U = [ U1*hssA.R1; U2*hssA.R2 ]
-    V = [ V1*hssA.W1; V2*hssA.W2 ]
-    return U, V
-  end
+generators(hssA::HssLeaf{T}) where T = hssA.U, hssA.V
+function generators(hssA::HssNode{T}) where T
+  U1, V1 = generators(hssA.A11)
+  U2, V2 = generators(hssA.A22)
+  return [U1*hssA.R1; U2*hssA.R2], [V1*hssA.W1; V2*hssA.W2]
 end
 
 ## orthogonalize generators
-function orthonormalize_generators!(hssA::HssMatrix{T}) where {T}
-  if hssA.A11.leafnode
+function orthonormalize_generators!(hssA::HssLeaf{T}) where T
+  U1 = qr(hssA.U); hssA.U = Matrix(U1.Q)
+  V1 = qr(hssA.V); hssA.V = Matrix(V1.Q)
+  return hssA
+end
+
+function orthonormalize_generators!(hssA::HssNode{T}) where T
+  if isleaf(hssA.A11)
     U1 = qr(hssA.A11.U); hssA.A11.U = Matrix(U1.Q)
     V1 = qr(hssA.A11.V); hssA.A11.V = Matrix(V1.Q)
   else
@@ -52,7 +53,7 @@ function orthonormalize_generators!(hssA::HssMatrix{T}) where {T}
     hssA.A11.W2 = W[rn1+1:end,:]
   end
 
-  if hssA.A22.leafnode
+  if isleaf(hssA.A22)
     U2 = qr(hssA.A22.U); hssA.A22.U = Matrix(U2.Q)
     V2 = qr(hssA.A22.V); hssA.A22.V = Matrix(V2.Q)
   else
@@ -69,15 +70,21 @@ function orthonormalize_generators!(hssA::HssMatrix{T}) where {T}
     hssA.A22.W2 = W[rn1+1:end,:]
   end
 
-  if !hssA.leafnode
-    hssA.B12 = U1.R*hssA.B12*V2.R'
-    hssA.B21 = U2.R*hssA.B21*V1.R'
-  end
+  hssA.B12 = U1.R*hssA.B12*V2.R'
+  hssA.B21 = U2.R*hssA.B21*V1.R'
 
-  if !hssA.rootnode
-    hssA.R1 = U1.R*hssA.R1
-    hssA.R2 = U2.R*hssA.R2
-    hssA.W1 = V1.R*hssA.W1
-    hssA.W2 = V2.R*hssA.W2
-  end
+  hssA.R1 = U1.R*hssA.R1
+  hssA.R2 = U2.R*hssA.R2
+  hssA.W1 = V1.R*hssA.W1
+  hssA.W2 = V2.R*hssA.W2
+
+  return hssA
+end
+
+full(hssA::HssMatrix) = _full(hssA)[1]
+_full(hssA::HssLeaf{T}) where T = hssA.D, hssA.U, hssA.V
+function _full(hssA::HssNode{T}) where T
+  A11, U1, V1 = _full(hssA.A11)
+  A22, U2, V2 = _full(hssA.A22)
+  return [A11 U1*hssA.B12*V2'; U2*hssA.B21*V1' A22], [U1*hssA.R1; U2*hssA.R2], [V1*hssA.W1; V2*hssA.W2]
 end

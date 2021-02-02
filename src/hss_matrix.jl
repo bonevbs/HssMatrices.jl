@@ -1,100 +1,85 @@
 ### Definitions of datastructures and basic constructors and operators
-# Written by Boris Bonev, Nov. 2020
+# Written by Boris Bonev, Jan. 2021
 
-## data structure
-mutable struct HssMatrix{T<:Number} <: AbstractMatrix{T}
-  # 2x2 recursive block structure for branchnodes
-  A11       ::HssMatrix{T}
-  A22       ::HssMatrix{T}
-  B12       ::Matrix{T}
-  B21       ::Matrix{T}
+## new datastructure which splits the old one into two parts to avoid unnecessary allocations
+# definition of leaf nodes
+mutable struct HssLeaf{T<:Number} #<: AbstractMatrix{T}
+  D ::Matrix{T}
+  U ::Matrix{T}
+  V ::Matrix{T}
 
-  # indicators whether we are at the root- or leafnode
-  rootnode  ::Bool
-  leafnode  ::Bool
-
-  # dimensions of its children
-  m1        ::Integer
-  n1        ::Integer
-  m2        ::Integer
-  n2        ::Integer
-
-  # translation operators if we are at a branchnode
-  R1        ::Matrix{T}
-  R2        ::Matrix{T}
-  W1        ::Matrix{T}
-  W2        ::Matrix{T}
-
-  # at the leaf level we store the diagonal block and generators directly
-  U         ::Matrix{T}
-  V         ::Matrix{T}
-  D         ::Matrix{T}
-
-  # inner constructor
-  HssMatrix{T}() where T = new{T}()
-end
-
-# make element type extraction work
-eltype(::Type{HssMatrix{T}}) where {T} = T
-
-## copy operators
-# maybe this should be called deepcopy?
-function copy(hssA::HssMatrix{T}) where {T}
-  hssB = HssMatrix{T}()
-
-  if isdefined(hssA, :A11); hssB.A11 = copy(hssA.A11); end
-  if isdefined(hssA, :A22); hssB.A22 = copy(hssA.A22); end
-  if isdefined(hssA, :B12); hssB.B12 = copy(hssA.B12); end
-  if isdefined(hssA, :B21); hssB.B21 = copy(hssA.B21); end
-
-  if isdefined(hssA, :rootnode); hssB.rootnode = hssA.rootnode; end
-  if isdefined(hssA, :leafnode); hssB.leafnode = hssA.leafnode; end
-
-  if isdefined(hssA, :m1); hssB.m1 = hssA.m1; end
-  if isdefined(hssA, :n1); hssB.n1 = hssA.n1; end
-  if isdefined(hssA, :m2); hssB.m2 = hssA.m2; end
-  if isdefined(hssA, :n2); hssB.n2 = hssA.n2; end
-
-  if isdefined(hssA, :R1); hssB.R1 = copy(hssA.R1); end
-  if isdefined(hssA, :R2); hssB.R2 = copy(hssA.R2); end
-  if isdefined(hssA, :W1); hssB.W1 = copy(hssA.W1); end
-  if isdefined(hssA, :W2); hssB.W2 = copy(hssA.W2); end
-
-  if isdefined(hssA, :U); hssB.U = copy(hssA.U); end
-  if isdefined(hssA, :V); hssB.V = copy(hssA.V); end
-  if isdefined(hssA, :D); hssB.D = copy(hssA.D); end
-
-  return(hssB)
-end
-
-## conversion
-#convert(::HssMatrix{T}, hssA::HssMatrix) where {T} = HssMatrix()
-
-## Typecasting routines
-# function HssMatrix{T<:Number}(hssA::HssMatrix{S}) where S
-#   isdefined() ? HssMatrix
-# end
-
-## Overriding some standard routines
-
-# Base.size
-Base.size(hssA::HssMatrix) = hssA.leafnode ? size(hssA.D) : (hssA.m1+hssA.m2, hssA.n1+hssA.n2)
-function Base.size(hssA::HssMatrix, dim::Integer)
-  if dim == 1
-    return hssA.m1+hssA.m2
-  elseif dim == 2
-    return hssA.n1+hssA.n2
-  elseif dim <= 0
-    error("arraysize: dimension out of range")
-  else
-    return 1
+  # constructor
+  function HssLeaf(D::Matrix{T}, U::Matrix{T}, V::Matrix{T}) where T
+    if size(D,1) != size(U,1) throw(ArgumentError("D and U must have same number of rows")) end
+    if size(D,2) != size(V,1) throw(ArgumentError("D and V must have same number of columns")) end
+    new{T}(D, U, V)
   end
 end
 
-# construct full matrix from HSS
-function Base.Matrix(hssA::HssMatrix{T}) where {T}
-  n = size(hssA,2)
-  return hssA * Matrix{T}(I, n, n)
+# definition of branch nodes
+mutable struct HssNode{T<:Number} #<: AbstractMatrix{T}
+  A11 ::Union{HssNode{T}, HssLeaf{T}}
+  A22 ::Union{HssNode{T}, HssLeaf{T}}
+  B12 ::Matrix{T}
+  B21 ::Matrix{T}
+
+  sz1 ::Tuple{Int, Int}
+  sz2 ::Tuple{Int, Int}
+
+  R1 ::Matrix{T}
+  W1 ::Matrix{T}
+  R2 ::Matrix{T}
+  W2 ::Matrix{T}
+
+  # internal constructors with checks for dimensions
+  function HssNode(A11::Union{HssLeaf{T}, HssNode{T}}, A22::Union{HssLeaf{T}, HssNode{T}}, B12::Matrix{T}, B21::Matrix{T}) where T
+    new{T}(A11, A22, B12, B21, size(A11), size(A22), Matrix{Float64}(undef,size(A11,1),0), Matrix{Float64}(undef,size(A11,2),0), Matrix{Float64}(undef,size(A22,1),0), Matrix{Float64}(undef,size(A22,2),0))
+  end
+  function HssNode(A11::Union{HssLeaf{T}, HssNode{T}}, A22::Union{HssLeaf{T}, HssNode{T}}, B12::Matrix{T}, B21::Matrix{T}, 
+    R1::Matrix{T}, W1::Matrix{T}, R2::Matrix{T}, W2::Matrix{T}) where T
+    if size(R1,2) != size(R2,2) throw(ArgumentError("R1 and R2 must have same number of columns")) end
+    if size(W1,2) != size(W2,2) throw(ArgumentError("W1 and W2 must have same number of rows")) end
+    new{T}(A11, A22, B12, B21, size(A11), size(A22), R1, W1, R2, W2)
+  end
 end
 
-# alternatively we can form the full matrix in a more straight-forward fashion
+# exterior constructors
+#HssNode(A11::Union{HssLeaf, HssNode}, A22::Union{HssLeaf, HssNode}, B12::Matrix, B21::Matrix, ::Nothing, ::Nothing, ::Nothing, ::Nothing) = HssNode(A11, A22, B12, B21)
+# TODO: add constructors that use compression methods
+
+# convenience alias (maybe unnecessary)
+const HssMatrix{T} = Union{HssLeaf{T}, HssNode{T}}
+isleaf(hssA::HssMatrix) = typeof(hssA) <: HssLeaf # check whether making this inline speeds up things ?
+isbranch(hssA::HssMatrix) = typeof(hssA) <: HssNode
+
+#isleaf(hssA::HssLeaf) = true
+#isleaf(hssA::HssNode) = false
+#isbranch(hssA::HssLeaf) = false
+#isbranch(hssA::HssNode) = true
+
+## Base overrides
+Base.eltype(::Type{HssLeaf{T}}) where T = T
+Base.eltype(::Type{HssNode{T}}) where T = T
+
+Base.size(hssA::HssLeaf) = size(hssA.D)
+Base.size(hssA::HssNode) = hssA.sz1 .+ hssA.sz2
+Base.size(hssA::HssMatrix, dim::Integer) = size(hssA)[dim]
+
+Base.show(io::IO, hssA::HssLeaf) = print(io, "$(size(hssA,1))x$(size(hssA,2)) HssLeaf{$(eltype(hssA))}")
+Base.show(io::IO, hssA::HssNode) = print(io, "$(size(hssA,1))x$(size(hssA,2)) HssNode{$(eltype(hssA))}")
+
+Base.copy(hssA::HssLeaf) = HssLeaf{eltype(hssA)}(copy(hssA.D), copy(hssA.U), copy(hssA.V))
+Base.copy(hssA::HssNode) = HssNode{eltype(hssA)}(copy(hssA.A11), copy(hssA.A22), copy(hssA.B12), copy(hssA.B21), copy(R1), copy(W1), copy(R2), copy(W2))
+
+## HSS specific routines
+hssrank(hssA::HssLeaf) = 0
+hssrank(hssA::HssNode) = max(hssrank(hssA.A11), hssrank(hssA.A22), rank(hssA.B12), rank(hssA.B21))
+
+
+# # construct full matrix from HSS
+# function Base.Matrix(hssA::HssMatrix{T}) where {T}
+#   n = size(hssA,2)
+#   return hssA * Union{Matrix{T}, Nothing}(I, n, n)
+# end
+
+# # alternatively we can form the full matrix in a more straight-forward fashion
