@@ -35,15 +35,9 @@ module HssMatrices
   # ulvfactor.jl
   export ulvfactsolve
   # visualization.jl
-  #export plotranks
+  export plotranks, pcolor
 
-
-  #export HssMatrix, bisection_cluster, hss_from_cluster!, hss_compress_direct, hss_recompress! 
-  #export generators, orthonormalize_generators!
-  #export ulvfactor, ulvsolve, ulvfactsolve, ULVFactor
-  #export plotranks, pcolor
-
-  include("hss_matrix.jl")
+  include("hssmatrix.jl")
   include("prrqr.jl")
   include("binarytree.jl")
   include("clustertree.jl")
@@ -51,6 +45,5 @@ module HssMatrices
   include("generators.jl")
   include("matmul.jl")
   include("ulvfactor.jl")
-  # include("basicops.jl")
-  # include("visualization.jl")
+  include("visualization.jl")
 end

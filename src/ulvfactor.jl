@@ -13,43 +13,11 @@ import LinearAlgebra.LAPACK.ormql!
 import LinearAlgebra.LAPACK.ormlq!
 import LinearAlgebra.BLAS.trsm
 
-# custom datastructure to store the hierarchical ULV factorization
-# the question is whether this is efficient or not
-mutable struct ULVFactor{T<:Number}
-  # data to store the factorization
-  L1::Matrix{T}
-  L2::Matrix{T}
-  U::Matrix{T}
-  V::Matrix{T}
-  QU::Tuple{Matrix{T},Vector{T}}
-  QV::Tuple{Matrix{T},Vector{T}}
-  ind::Vector{Int}
-  cind::Vector{Int}
-  oind::Vector{Int}
-
-  # indicators to help the recursion
-  rootnode::Bool
-  leafnode::Bool
-
-  # the treestructure itself
-  parent::ULVFactor{T}
-  left::ULVFactor{T}
-  right::ULVFactor{T}
-
-  # Root constructor
-  ULVFactor{T}() where T = (x = new{T}(); x.leafnode = true; x.rootnode = false; return x)
-
-  # Child node constructor
-  ULVFactor(p::ULVFactor{T}) where T = (x = new{T}(); x.parent = p; x.leafnode = true; x.rootnode = false; return x)
-  ULVFactor(cl::ULVFactor{T}, cr::ULVFactor{T}) where T = (x = new{T}(); x.left = cl; x.right = cr; x.leafnode = false; x.rootnode = false; return x)
-end
-ULVFactor(L, U, V) = ULVFactor{typeof(data)}(data)
-
 # function for direct solution using the implicit ULV factorization
 ulvfactsolve(hssA::HssLeaf{T}, b::Matrix{T}) where T = hssA.D\b
 function ulvfactsolve(hssA::HssNode{T}, b::Matrix{T}) where T
   x = zeros(size(hssA,2), size(b,2))
-  _, _, _, _, _, _, _, ulvA = _ulvfactsolve!(hssA, copy(b), x, 0; rootnode=true)
+  _, _, _, _, _, _, _, ulvA = _ulvfactsolve!(hssA, b, x, 0; rootnode=true)
   x = _ulvsolve_topdown!(ulvA, x)
   return x
 end
