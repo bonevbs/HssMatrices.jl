@@ -49,7 +49,7 @@ ULVFactor(L, U, V) = ULVFactor{typeof(data)}(data)
 ulvfactsolve(hssA::HssLeaf{T}, b::Matrix{T}) where T = hssA.D\b
 function ulvfactsolve(hssA::HssNode{T}, b::Matrix{T}) where T
   x = zeros(size(hssA,2), size(b,2))
-  _, _, _, _, _, _, _, ulvA = _ulvfactsolve!(hssA, copy(b), x, 0, 0; rootnode=true)
+  _, _, _, _, _, _, _, ulvA = _ulvfactsolve!(hssA, copy(b), x, 0; rootnode=true)
   x = _ulvsolve_topdown!(ulvA, x)
   return x
 end
@@ -82,14 +82,14 @@ function _ulvreduce!(D::Matrix{T}, U::Matrix{T}, V::Matrix{T}, b::Matrix{T}) whe
     V = ormlq!('L', 'N', lqf..., V) # compute the updated off-diagonal generators on the right
     u = V[ind,:]' * zloc # compute update vector to be passed on
     # pass on uncompressed parts of the problem
-    D = L2[:, nk+1:end]
-    V = V[nk+1:end, :]
+    D = @view L2[:, nk+1:end]
+    V = @view V[nk+1:end, :]
   end
   return D, U, V, b, zloc, u, m-k, nk, lqf
 end
 
 # tree traversal that handles the hierarchical ULV factorization
-function _ulvfactsolve!(hssA::HssLeaf{T}, b::Matrix{T}, z::Matrix{T}, ro::Int, co::Int; rootnode=false) where T
+function _ulvfactsolve!(hssA::HssLeaf{T}, b::Matrix{T}, z::Matrix{T}, co::Int; rootnode=false) where T
   cols = co .+ (1:size(hssA,2))
   D = copy(hssA.D)
   U = copy(hssA.U)
@@ -101,12 +101,12 @@ function _ulvfactsolve!(hssA::HssLeaf{T}, b::Matrix{T}, z::Matrix{T}, ro::Int, c
   ulvA.oind = cols
   return b, u, D, U, V, cols, nk, ulvA
 end
-function _ulvfactsolve!(hssA::HssNode{T}, b::Matrix{T}, z::Matrix{T}, ro::Int, co::Int; rootnode=false) where T
+function _ulvfactsolve!(hssA::HssNode{T}, b::Matrix{T}, z::Matrix{T}, co::Int; rootnode=false) where T
   m1, n1 = hssA.sz1
   m2, n2 = hssA.sz2
-  b1 = b[1:m1, :]; b2 = b[m1+1:end, :]
-  b1, u1, D1, U1, V1, cols1, nk1, ulvA1 = _ulvfactsolve!(hssA.A11, b1, z, ro, co)
-  b2, u2, D2, U2, V2, cols2, nk2, ulvA2 = _ulvfactsolve!(hssA.A22, b2, z, ro+m1, co+n1)
+  b1 = b[1:m1, :]; b2 = b[m1+1:end, :] # performance could be further improved by getting rid of those allocations
+  b1, u1, D1, U1, V1, cols1, nk1, ulvA1 = _ulvfactsolve!(hssA.A11, b1, z, co)
+  b2, u2, D2, U2, V2, cols2, nk2, ulvA2 = _ulvfactsolve!(hssA.A22, b2, z, co+n1)
   ulvA = ULVFactor(ulvA1, ulvA2)
 
   # merge nodes to form new diagonal block 
