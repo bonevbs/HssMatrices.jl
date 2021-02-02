@@ -33,6 +33,7 @@ module HssMatrices
   export generators, orthonormalize_generators!, full
   # matmul.jl
   # ulvfactor.jl
+  export ulvfactsolve
   # visualization.jl
   #export plotranks
 
@@ -49,7 +50,7 @@ module HssMatrices
   include("compression.jl")
   include("generators.jl")
   include("matmul.jl")
+  include("ulvfactor.jl")
   # include("basicops.jl")
-  # include("ulvfactor.jl")
   # include("visualization.jl")
 end

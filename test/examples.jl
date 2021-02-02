@@ -14,7 +14,6 @@ using Plots
 # generate Cauchy matrix
 K(x,y) = (x-y) != 0 ? 1/(x-y) : 10000.
 A = [ K(x,y) for x=-1:0.001:1, y=-1:0.001:1];
-b = randn(size(A,2), 5);
 
 # test the simple implementation of cluster trees
 m, n = size(A)
@@ -35,12 +34,13 @@ hssA = hss_compress_direct(A, rcl, ccl);
 
 # test mat-vec
 x = randn(size(A,2), 3);
-println(norm(A*x - hssA*x));
+println("error in the matrix-vector products: ", norm(A*x - hssA*x))
 
 # test the ULV based solver
-# x = ulvfactsolve(hssA, b);
-# xcor = A\b;
-# println(norm(x-xcor)/norm(xcor))
+b = randn(size(A,2), 5);
+x = ulvfactsolve(hssA, b);
+xcor = A\b;
+println("error in the inversion: ", norm(x-xcor)/norm(xcor))
 
 
 # # test computation of generators

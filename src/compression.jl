@@ -17,8 +17,6 @@
 #
 # Re-Written by Boris Bonev, Jan. 2021
 
-using Infiltrator
-
 # Utility routine to provide access to pivoted rank-revealing qr
 function _compress_block!(A::Matrix{T}; tol, reltol) where T
   B = copy(A)
