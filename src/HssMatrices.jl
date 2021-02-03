@@ -27,10 +27,12 @@ module HssMatrices
   export prrqr!, truncate_block!
   # binarytree.jl and clustertree.jl
   export BinaryNode, leftchild, rightchild, isleaf, isbranch, bisection_cluster
+  # basicops.jl
+  export full, prune_leaves!
   # compression.jl
   export hss_compress_direct, hss_recompress!
   # generators.jl  
-  export generators, orthonormalize_generators!, full
+  export generators, orthonormalize_generators!
   # matmul.jl
   # ulvfactor.jl
   export ulvfactsolve
@@ -41,6 +43,7 @@ module HssMatrices
   include("prrqr.jl")
   include("binarytree.jl")
   include("clustertree.jl")
+  include("basicops.jl")
   include("compression.jl")
   include("generators.jl")
   include("matmul.jl")
