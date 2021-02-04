@@ -5,16 +5,18 @@
 
 ## most of this is taken from the AbstractTrees example
 mutable struct BinaryNode{T}
-  data::T
-  left::Union{Nothing, BinaryNode{T}}
-  right::Union{Nothing, BinaryNode{T}}
+  data::Union{T, Nothing}
+  left::Union{BinaryNode{T}, Nothing}
+  right::Union{BinaryNode{T}, Nothing}
 
   # Root constructor
-  BinaryNode{T}() where T = new{T}()
+  BinaryNode{T}() where T = new{T}(nothing, nothing, nothing)
   BinaryNode{T}(data) where T = new{T}(data, nothing, nothing)
   BinaryNode{T}(data, left, right) where T = new{T}(data, left, right)
+  BinaryNode{T}(left, right) where T = new{T}(nothing, left, right)
 end
 BinaryNode(data) = BinaryNode{typeof(data)}(data)
+BinaryNode(left::BinaryNode{T}, right::BinaryNode{T}) where T = BinaryNode{T}(left, right)
 BinaryNode(data, left::BinaryNode, right::BinaryNode) = BinaryNode{typeof(data)}(data, left, right)
 
 isleaf(node::BinaryNode) = isnothing(node.left) && isnothing(node.right)

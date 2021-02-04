@@ -14,28 +14,28 @@ module HssMatrices
   using Plots # in the future, move to RecipesBase
 
   # using InvertedIndices, DataStructures
-  import Base.*, Base.+, Base.Matrix, Base.copy, Base.size
+  import Base.+, Base.-, Base.*, Base.Matrix, Base.copy, Base.size
 
   global tol = 1e-9
   global reltol = true
   global leafsize = 32
 
   #export tol, reltol, leafsize
-  # hss_matrix.jl
-  export HssLeaf, HssNode, HssMatrix, isleaf, isbranch, hssrank
+  # hssmatrix.jl
+  export HssLeaf, HssNode, HssMatrix, isleaf, isbranch, hssrank, full, prune_leaves!
   # prrqr.jl
   export prrqr!, truncate_block!
   # binarytree.jl and clustertree.jl
   export BinaryNode, leftchild, rightchild, isleaf, isbranch, bisection_cluster
-  # basicops.jl
-  export full, prune_leaves!
   # compression.jl
-  export hss_compress_direct, hss_recompress!
+  export compress_direct, recompress!
   # generators.jl  
   export generators, orthonormalize_generators!
   # matmul.jl
   # ulvfactor.jl
   export ulvfactsolve
+  # hssdivide.jl
+  export hssldivide!, _ulvfactor_leaves!
   # visualization.jl
   export plotranks, pcolor
 
@@ -43,10 +43,10 @@ module HssMatrices
   include("prrqr.jl")
   include("binarytree.jl")
   include("clustertree.jl")
-  include("basicops.jl")
   include("compression.jl")
   include("generators.jl")
   include("matmul.jl")
   include("ulvfactor.jl")
+  include("hssdivide.jl")
   include("visualization.jl")
 end

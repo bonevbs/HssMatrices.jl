@@ -26,7 +26,7 @@ function _plotranks!(hssA::HssMatrix, co, ro, cticks, rticks, level, cl)
   if isleaf(hssA)
     m, n = size(hssA)
     plot!(_rectangle(n,m,co,ro), color=:tomato, label=false)
-  elseif isbranch(hssA)
+  else
     m1, n1 = hssA.sz1
     m2, n2 = hssA.sz2
     # plot diagonal blocks and ticks
@@ -41,8 +41,6 @@ function _plotranks!(hssA::HssMatrix, co, ro, cticks, rticks, level, cl)
     if level < cl annotate!((co+n1+0.5*n2, ro+0.5*m1, text(rank(hssA.B12), 8))) end
     plot!(_rectangle(n1, m2, co, ro+m1), color=:aliceblue, label=false)
     if level < cl annotate!((co+0.5*n1, ro+m1+0.5*m2, text(rank(hssA.B21), 8))) end
-  else
-    throw(ArgumentError("hssA is not a HssLeaf or HssNode"))
   end
   return rticks, cticks
 end

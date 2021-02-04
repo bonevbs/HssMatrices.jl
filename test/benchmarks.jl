@@ -15,11 +15,15 @@ lsz = 64;
 rcl = bisection_cluster(1:m, lsz)
 ccl = bisection_cluster(1:n, lsz)
 
-hssA = hss_compress_direct(A, rcl, ccl);
+hssA = compress_direct(A, rcl, ccl);
 
 # time compression
 println("Benchmarking compression...")
-@btime hssA = hss_compress_direct(A, rcl, ccl);
+@btime hssA = compress_direct(A, rcl, ccl);
+
+println("Benchmarking re-compression...")
+hssB = copy(hssA)
+@btime hssA = recompress!(hssB; tol=1e-3);
 
 # time matvec
 println("Benchmarking matvec...")

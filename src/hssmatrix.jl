@@ -52,11 +52,6 @@ const HssMatrix{T} = Union{HssLeaf{T}, HssNode{T}}
 isleaf(hssA::HssMatrix) = typeof(hssA) <: HssLeaf # check whether making this inline speeds up things ?
 isbranch(hssA::HssMatrix) = typeof(hssA) <: HssNode
 
-#isleaf(hssA::HssLeaf) = true
-#isleaf(hssA::HssNode) = false
-#isbranch(hssA::HssLeaf) = false
-#isbranch(hssA::HssNode) = true
-
 ## Base overrides
 Base.eltype(::Type{HssLeaf{T}}) where T = T
 Base.eltype(::Type{HssNode{T}}) where T = T
@@ -68,18 +63,66 @@ Base.size(hssA::HssMatrix, dim::Integer) = size(hssA)[dim]
 Base.show(io::IO, hssA::HssLeaf) = print(io, "$(size(hssA,1))x$(size(hssA,2)) HssLeaf{$(eltype(hssA))}")
 Base.show(io::IO, hssA::HssNode) = print(io, "$(size(hssA,1))x$(size(hssA,2)) HssNode{$(eltype(hssA))}")
 
-Base.copy(hssA::HssLeaf) = HssLeaf{eltype(hssA)}(copy(hssA.D), copy(hssA.U), copy(hssA.V))
-Base.copy(hssA::HssNode) = HssNode{eltype(hssA)}(copy(hssA.A11), copy(hssA.A22), copy(hssA.B12), copy(hssA.B21), copy(R1), copy(W1), copy(R2), copy(W2))
+Base.copy(hssA::HssLeaf) = HssLeaf(copy(hssA.D), copy(hssA.U), copy(hssA.V))
+Base.copy(hssA::HssNode) = HssNode(copy(hssA.A11), copy(hssA.A22), copy(hssA.B12), copy(hssA.B21), copy(hssA.R1), copy(hssA.W1), copy(hssA.R2), copy(hssA.W2))
 
-## HSS specific routines
+## basic algebraic operations (taken and modified from LowRankApprox.jl)
+blkdiag(A::Matrix, B::Matrix) = [A zeros(size(A,1), size(B,2)); zeros(size(B,1), size(A,2)) B]
+for op in (:+,:-)
+  @eval begin
+    $op(hssA::HssLeaf) = HssLeaf($op(hssA.D), hssA.U, hssA.V)
+    $op(hssA::HssNode) = HssNode($op(hssA.A11), $op(hssA.A22), $op(hssA.B12), $op(hssA.B21), hssA.R1, hssA.W1, hssA.R2, hssA.W2)
+
+    $op(a::Bool, hssA::HssMatrix{Bool}) = error("Not callable")
+    $op(L::HssMatrix{Bool}, a::Bool) = error("Not callable")
+    #$op(a::Number, hssA::HssMatrix) = $op(LowRankMatrix(Fill(a,size(L))), L)
+    #$op(L::HssMatrix, a::Number) = $op(L, LowRankMatrix(Fill(a,size(L))))
+
+    function $op(hssA::HssLeaf, hssB::HssLeaf)
+      size(hssA) == size(hssB) || throw(DimensionMismatch("A has dimensions $(size(hssA)) but B has dimensions $(size(hssB))"))
+      HssLeaf($op(hssA.D, hssB.D), [hssA.U hssB.U], [hssA.V hssB.V])
+    end
+    function $op(hssA::HssNode, hssB::HssNode)
+      hssA.sz1 == hssB.sz1 || throw(DimensionMismatch("A11 has dimensions $(hssA.sz1) but B11 has dimensions $(hssB.sz1)"))
+      hssA.sz2 == hssB.sz2 || throw(DimensionMismatch("A22 has dimensions $(hssA.sz2) but B22 has dimensions $(hssA.sz2)"))
+      hssC = HssNode($op(hssA.A11, hssB.A11), $op(hssA.A22, hssB.A22), blkdiag(hssA.B12, $op(hssB.B12)), blkdiag(hssA.B21, $op(hssB.B21)),
+        blkdiag(hssA.R1, hssB.R1), blkdiag(hssA.W1, hssB.W1), blkdiag(hssA.R2, hssB.R2), blkdiag(hssA.W2, hssB.W2))
+      #recompress!(hssC)
+    end
+    #$op(L::LowRankMatrix,A::Matrix) = $op(promote(L,A)...)
+    #$op(A::Matrix,L::LowRankMatrix) = $op(promote(A,L)...)
+  end
+end
+
+# Scalar multiplication
+*(a::Number, hssA::HssLeaf) = HssLeaf(a*hssA.D, hssA.U, hssA.V)
+*(a::Number, hssA::HssNode) = HssNode(a*hssA.A11, a*hssA.A22, a*hssA.B12, a*hssA.B21, hssA.R1, hssA.W1, hssA.R2, hssA.W2)
+*(hssA::HssLeaf, a::Number) = *(a, hssA)
+*(hssA::HssNode, a::Number) = *(a, hssA)
+
+## Some more fundamental operations
+# compute the HSS rank
 hssrank(hssA::HssLeaf) = 0
 hssrank(hssA::HssNode) = max(hssrank(hssA.A11), hssrank(hssA.A22), rank(hssA.B12), rank(hssA.B21))
 
+# return a full matri
+full(hssA::HssMatrix) = _full(hssA)[1]
+_full(hssA::HssLeaf) = hssA.D, hssA.U, hssA.V
+function _full(hssA::HssNode)
+  A11, U1, V1 = _full(hssA.A11)
+  A22, U2, V2 = _full(hssA.A22)
+  return [A11 U1*hssA.B12*V2'; U2*hssA.B21*V1' A22], [U1*hssA.R1; U2*hssA.R2], [V1*hssA.W1; V2*hssA.W2]
+end
 
-# # construct full matrix from HSS
-# function Base.Matrix(hssA::HssMatrix{T}) where {T}
-#   n = size(hssA,2)
-#   return hssA * Union{Matrix{T}, Nothing}(I, n, n)
-# end
-
-# # alternatively we can form the full matrix in a more straight-forward fashion
+# remove leaves on the bottom level
+prune_leaves!(hssA::HssLeaf) = hssA
+function prune_leaves!(hssA::HssNode)
+  if isleaf(hssA.A11) && isleaf(hssA.A22)
+    hssA = HssLeaf(_full(hssA)...)
+    return hssA
+  else
+    hssA.A11 = prune_leaves!(hssA.A11)
+    hssA.A22 = prune_leaves!(hssA.A22)
+    return hssA
+  end
+end

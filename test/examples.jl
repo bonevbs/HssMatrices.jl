@@ -22,10 +22,8 @@ rcl = bisection_cluster(1:m, lsz)
 ccl = bisection_cluster(1:n, lsz)
 
 # test compression
-hssA = hss_compress_direct(A, rcl, ccl);
-@time hssA = hss_compress_direct(A, rcl, ccl);
-
-@time hssA = hss_compress_direct(A, rcl, ccl);
+hssA = compress_direct(A, rcl, ccl);
+@time hssA = compress_direct(A, rcl, ccl);
 
 # test recompression
 # println("approximation error before recompression: ", norm(A - full(hssA)))
@@ -43,6 +41,11 @@ x = ulvfactsolve(hssA, b);
 @time x = ulvfactsolve(hssA, b);
 xcor = A\b;
 println("error in the inversion: ", norm(x-xcor)/norm(xcor))
+
+# test hssdivide
+hssI = compress_direct(1.0*Matrix(I, n, n), ccl, ccl)
+
+#hssA = hssldivide!(hssA, hssI)
 
 
 # # test computation of generators

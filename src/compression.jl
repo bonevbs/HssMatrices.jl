@@ -27,7 +27,7 @@ end
 
 ## Direct compression algorithm
 # wrapper function that will be exported
-function hss_compress_direct(A::Matrix{T}, rcl::ClusterTree, ccl::ClusterTree; tol=tol, reltol=reltol) where T
+function compress_direct(A::Matrix{T}, rcl::ClusterTree, ccl::ClusterTree; tol=tol, reltol=reltol) where T
   m = length(rcl.data); n = length(ccl.data)
   if size(A) != (m,n) throw(ArgumentError("size of row- and column-cluster-trees must match")) end
   Brow = Array{T}(undef, m, 0)
@@ -104,7 +104,7 @@ function _compress_direct!(A::Matrix{T}, Brow::Matrix{T}, Bcol::Matrix{T}, rcl::
 end
 
 ## Recompression algorithm
-function hss_recompress!(hssA::HssMatrix{T}; tol=tol, reltol=reltol) where T
+function recompress!(hssA::HssMatrix{T}; tol=tol, reltol=reltol) where T
   if isleaf(hssA); return hssA; end
 
   # a prerequisite for this algorithm to work is that generators are orthonormal
