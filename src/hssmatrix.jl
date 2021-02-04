@@ -87,7 +87,7 @@ for op in (:+,:-)
       hssA.sz2 == hssB.sz2 || throw(DimensionMismatch("A22 has dimensions $(hssA.sz2) but B22 has dimensions $(hssA.sz2)"))
       hssC = HssNode($op(hssA.A11, hssB.A11), $op(hssA.A22, hssB.A22), blkdiag(hssA.B12, $op(hssB.B12)), blkdiag(hssA.B21, $op(hssB.B21)),
         blkdiag(hssA.R1, hssB.R1), blkdiag(hssA.W1, hssB.W1), blkdiag(hssA.R2, hssB.R2), blkdiag(hssA.W2, hssB.W2))
-      #recompress!(hssC)
+      recompress!(hssC)
     end
     #$op(L::LowRankMatrix,A::Matrix) = $op(promote(L,A)...)
     #$op(A::Matrix,L::LowRankMatrix) = $op(promote(A,L)...)
@@ -118,8 +118,7 @@ end
 prune_leaves!(hssA::HssLeaf) = hssA
 function prune_leaves!(hssA::HssNode)
   if isleaf(hssA.A11) && isleaf(hssA.A22)
-    hssA = HssLeaf(_full(hssA)...)
-    return hssA
+    return HssLeaf(_full(hssA)...)
   else
     hssA.A11 = prune_leaves!(hssA.A11)
     hssA.A22 = prune_leaves!(hssA.A22)

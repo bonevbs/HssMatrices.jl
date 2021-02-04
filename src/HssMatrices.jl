@@ -36,6 +36,8 @@ module HssMatrices
   export ulvfactsolve
   # hssdivide.jl
   export hssldivide!, _ulvfactor_leaves!
+  # constructors.jl
+  export lowrank2hss
   # visualization.jl
   export plotranks, pcolor
 
@@ -48,5 +50,6 @@ module HssMatrices
   include("matmul.jl")
   include("ulvfactor.jl")
   include("hssdivide.jl")
+  include("constructors.jl")
   include("visualization.jl")
 end
