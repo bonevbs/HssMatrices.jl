@@ -25,8 +25,10 @@ module HssMatrices
   export HssLeaf, HssNode, HssMatrix, isleaf, isbranch, hssrank, full, prune_leaves!
   # prrqr.jl
   export prrqr!, truncate_block!
-  # binarytree.jl and clustertree.jl
-  export BinaryNode, leftchild, rightchild, isleaf, isbranch, bisection_cluster
+  # binarytree.jl
+  export BinaryNode, leftchild, rightchild, isleaf, isbranch
+  # clustertree.jl
+  export bisection_cluster, cluster
   # compression.jl
   export compress_direct, recompress!
   # generators.jl  

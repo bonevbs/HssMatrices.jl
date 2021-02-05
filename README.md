@@ -41,9 +41,22 @@ Basic arithmetic on hierarchical matrices requires frequent recompression of the
 
 Recompression can be done by simply calling the constructor on an `HssMatrix{T}` object, alternatively specifying a new compression tolerance:
 ```Julia
-hssA = HssMatrix(hssA, tol=1e-3)
+hssA = HssMatrix(hssA; tol=1e-3)
 ```
 All compression is handled in the sense that individual HSS block rows and columns approximate the original matrix A such that the tolerance is below `tol` for this block. Similarly, if `reltol` is set to `true`, each of the blocks will be compressed in the sense that the individual block is well-approximated in the relative sense.
+
+Alternatively, we can construct HSS matrices via random sampling.
+
+It can also be useful to construct HSS matrices from specific datastructures. For instance, we can construct an HSS matrix from a low-rank matrix in the following fashion:
+```Julia
+lsz = 32
+m, n = 500, 500
+k = 10
+U = randn(m, k); V = randn(n,k)
+rcl = bisection_cluster(1:m, lsz)
+ccl = bisection_cluster(1:n, lsz)
+hssA = lowrank2hss(U, V, rcl, ccl)
+```
 
 Stay tuned! More is in the works...
 

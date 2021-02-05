@@ -33,12 +33,13 @@ mutable struct HssNode{T<:Number} #<: AbstractMatrix{T}
 
   # internal constructors with checks for dimensions
   function HssNode(A11::Union{HssLeaf{T}, HssNode{T}}, A22::Union{HssLeaf{T}, HssNode{T}}, B12::Matrix{T}, B21::Matrix{T}) where T
-    new{T}(A11, A22, B12, B21, size(A11), size(A22), Matrix{Float64}(undef,size(A11,1),0), Matrix{Float64}(undef,size(A11,2),0), Matrix{Float64}(undef,size(A22,1),0), Matrix{Float64}(undef,size(A22,2),0))
+    new{T}(A11, A22, B12, B21, size(A11), size(A22),
+      Matrix{Float64}(undef,size(A11.R1,2),0), Matrix{Float64}(undef,size(A11.W1,2),0), Matrix{Float64}(undef,size(A22.R1,2),0), Matrix{Float64}(undef,size(A22.W1,2),0))
   end
   function HssNode(A11::Union{HssLeaf{T}, HssNode{T}}, A22::Union{HssLeaf{T}, HssNode{T}}, B12::Matrix{T}, B21::Matrix{T}, 
     R1::Matrix{T}, W1::Matrix{T}, R2::Matrix{T}, W2::Matrix{T}) where T
-    if size(R1,2) != size(R2,2) throw(ArgumentError("R1 and R2 must have same number of columns")) end
-    if size(W1,2) != size(W2,2) throw(ArgumentError("W1 and W2 must have same number of rows")) end
+    if size(R1,2) != size(R2,2) throw(DimensionMismatch("R1 and R2 must have same number of columns")) end
+    if size(W1,2) != size(W2,2) throw(DimensionMismatch("W1 and W2 must have same number of rows")) end
     new{T}(A11, A22, B12, B21, size(A11), size(A22), R1, W1, R2, W2)
   end
 end
