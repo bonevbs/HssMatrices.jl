@@ -19,8 +19,7 @@
 
 # Utility routine to provide access to pivoted rank-revealing qr
 function _compress_block!(A::Matrix{T}; tol, reltol) where T
-  B = copy(A)
-  Q, R, p = prrqr!(A, tol; reltol)
+  Q, R, p = prrqr!(copy(A), tol; reltol)
   rk = min(size(R)...)
   return Q[:,1:rk], R[1:rk, invperm(p)]
 end
@@ -121,9 +120,9 @@ function recompress!(hssA::HssMatrix{T}; tol=tol, reltol=reltol) where T
 
   # fix dimensions of ghost-translators in rootnode
   hssA.R1 = hssA.R1[1:size(hssA.B12, 1),:]
-  hssA.W1 = hssA.R1[1:size(hssA.B21, 2),:]
-  hssA.R2 = hssA.R1[1:size(hssA.B21, 1),:]
-  hssA.W2 = hssA.R1[1:size(hssA.B12, 2),:]
+  hssA.W1 = hssA.W1[1:size(hssA.B21, 2),:]
+  hssA.R2 = hssA.R2[1:size(hssA.B21, 1),:]
+  hssA.W2 = hssA.W2[1:size(hssA.B12, 2),:]
 
   # pass information to children and proceed recursively
   if isbranch(hssA.A11)

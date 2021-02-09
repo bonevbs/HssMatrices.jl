@@ -33,8 +33,9 @@ mutable struct HssNode{T<:Number} #<: AbstractMatrix{T}
 
   # internal constructors with checks for dimensions
   function HssNode(A11::Union{HssLeaf{T}, HssNode{T}}, A22::Union{HssLeaf{T}, HssNode{T}}, B12::Matrix{T}, B21::Matrix{T}) where T
+    kr1, kw1 = gensize(A11); kr2, kw2 = gensize(A22)
     new{T}(A11, A22, B12, B21, size(A11), size(A22),
-      Matrix{Float64}(undef,size(A11.R1,2),0), Matrix{Float64}(undef,size(A11.W1,2),0), Matrix{Float64}(undef,size(A22.R1,2),0), Matrix{Float64}(undef,size(A22.W1,2),0))
+      Matrix{Float64}(undef,kr1,0), Matrix{Float64}(undef,kw1,0), Matrix{Float64}(undef,kr2,0), Matrix{Float64}(undef,kw2,0))
   end
   function HssNode(A11::Union{HssLeaf{T}, HssNode{T}}, A22::Union{HssLeaf{T}, HssNode{T}}, B12::Matrix{T}, B21::Matrix{T}, 
     R1::Matrix{T}, W1::Matrix{T}, R2::Matrix{T}, W2::Matrix{T}) where T
@@ -67,8 +68,11 @@ Base.show(io::IO, hssA::HssNode) = print(io, "$(size(hssA,1))x$(size(hssA,2)) Hs
 Base.copy(hssA::HssLeaf) = HssLeaf(copy(hssA.D), copy(hssA.U), copy(hssA.V))
 Base.copy(hssA::HssNode) = HssNode(copy(hssA.A11), copy(hssA.A22), copy(hssA.B12), copy(hssA.B21), copy(hssA.R1), copy(hssA.W1), copy(hssA.R2), copy(hssA.W2))
 
-## basic algebraic operations (taken and modified from LowRankApprox.jl)
+# Define Matlab-like convenience functions, which are used throughout the library
 blkdiag(A::Matrix, B::Matrix) = [A zeros(size(A,1), size(B,2)); zeros(size(B,1), size(A,2)) B]
+blkdiag(A::Matrix... ) = blkdiag(A[1], blkdiag(A[2:end]...))
+
+## basic algebraic operations (taken and modified from LowRankApprox.jl)
 for op in (:+,:-)
   @eval begin
     $op(hssA::HssLeaf) = HssLeaf($op(hssA.D), hssA.U, hssA.V)
@@ -88,7 +92,7 @@ for op in (:+,:-)
       hssA.sz2 == hssB.sz2 || throw(DimensionMismatch("A22 has dimensions $(hssA.sz2) but B22 has dimensions $(hssA.sz2)"))
       hssC = HssNode($op(hssA.A11, hssB.A11), $op(hssA.A22, hssB.A22), blkdiag(hssA.B12, $op(hssB.B12)), blkdiag(hssA.B21, $op(hssB.B21)),
         blkdiag(hssA.R1, hssB.R1), blkdiag(hssA.W1, hssB.W1), blkdiag(hssA.R2, hssB.R2), blkdiag(hssA.W2, hssB.W2))
-      recompress!(hssC)
+      #recompress!(hssC)
     end
     #$op(L::LowRankMatrix,A::Matrix) = $op(promote(L,A)...)
     #$op(A::Matrix,L::LowRankMatrix) = $op(promote(A,L)...)
@@ -105,14 +109,37 @@ end
 # compute the HSS rank
 hssrank(hssA::HssLeaf) = 0
 hssrank(hssA::HssNode) = max(hssrank(hssA.A11), hssrank(hssA.A22), rank(hssA.B12), rank(hssA.B21))
+gensize(hssA::HssLeaf) = size(hssA.U,2), size(hssA.V,2)
+function gensize(hssA::HssNode)
+  (kr = size(hssA.R1,2)) == size(hssA.R2,2) || throw(DimensionMismatch("dimensions of column-translators do not match"))
+  (kw = size(hssA.W1,2)) == size(hssA.W2,2) || throw(DimensionMismatch("dimensions of row-translators do not match"))
+  return kr, kw
+end
 
-# return a full matri
+# return a full matrix
+# TODO: change this into a convert routine
 full(hssA::HssMatrix) = _full(hssA)[1]
 _full(hssA::HssLeaf) = hssA.D, hssA.U, hssA.V
 function _full(hssA::HssNode)
   A11, U1, V1 = _full(hssA.A11)
   A22, U2, V2 = _full(hssA.A22)
   return [A11 U1*hssA.B12*V2'; U2*hssA.B21*V1' A22], [U1*hssA.R1; U2*hssA.R2], [V1*hssA.W1; V2*hssA.W2]
+end
+
+# useful routine to check whether dimensions are compatible
+checkdims(hssA::HssMatrix)= _checkdims(hssA, 1)[1]
+function _checkdims(hssA::HssLeaf, i::Int)
+  compatible = (size(hssA.D,1) == size(hssA.U,1)) && (size(hssA.D,2) == size(hssA.V,1))
+  if !compatible println("dimensions don't match in node ", i) end
+  return compatible, i+1
+end
+function _checkdims(hssA::HssNode, i::Int)
+  comp1, i = _checkdims(hssA.A11, i)
+  comp2, i = _checkdims(hssA.A22, i)
+  r1, w1 = gensize(hssA.A11); r2, w2 = gensize(hssA.A22)
+  compatible = (r1 == size(hssA.R1,1)) && (r2 == size(hssA.R2,1)) && (w1 == size(hssA.W1,1)) && (w2 == size(hssA.W2,1))
+  if !compatible println("dimensions don't match in node ", i) end
+  return compatible && comp1 && comp2, i+1
 end
 
 # remove leaves on the bottom level

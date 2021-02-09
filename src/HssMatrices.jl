@@ -18,11 +18,11 @@ module HssMatrices
 
   global tol = 1e-9
   global reltol = true
-  global leafsize = 32
+  global leafsize = 64
 
   #export tol, reltol, leafsize
   # hssmatrix.jl
-  export HssLeaf, HssNode, HssMatrix, isleaf, isbranch, hssrank, full, prune_leaves!
+  export HssLeaf, HssNode, HssMatrix, isleaf, isbranch, hssrank, full, checkdims, prune_leaves!
   # prrqr.jl
   export prrqr!, truncate_block!
   # binarytree.jl

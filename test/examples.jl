@@ -12,7 +12,7 @@ using Plots
 # norm(A[:,p] - Q[:,1:size(R,1)]*R)
 
 # generate Cauchy matrix
-K(x,y) = (x-y) != 0 ? 1/(x-y) : 10000.
+K(x,y) = (x-y) != 0 ? 1/(x-y) : 1.
 A = [ K(x,y) for x=-1:0.001:1, y=-1:0.001:1];
 
 # test the simple implementation of cluster trees
@@ -24,12 +24,12 @@ ccl = bisection_cluster(1:n, lsz)
 # test compression
 hssA = compress_direct(A, rcl, ccl);
 @time hssA = compress_direct(A, rcl, ccl);
+println("approximation error with direct compression: ", norm(A - full(hssA)))
+println("hss-rank with direct compression: ", hssrank(hssA))
 
 # test recompression
-# println("approximation error before recompression: ", norm(A - full(hssA)))
-# hss_recompress!(hssA; tol=1e-1, reltol=false)
-# println("approximation error after recompression: ", norm(A - full(hssA)))
-# @time hss_recompress!(hssA; tol=1e-1, reltol=false)
+hssB = recompress!(copy(hssA))
+println("approximation error after recompression: ", norm(A - full(hssB)))
 
 # test mat-vec
 x = randn(size(A,2), 3);
@@ -42,10 +42,10 @@ x = ulvfactsolve(hssA, b);
 xcor = A\b;
 println("error in the inversion: ", norm(x-xcor)/norm(xcor))
 
-# test hssdivide
+# test HSS division
 hssI = compress_direct(1.0*Matrix(I, n, n), ccl, ccl)
-
-#hssA = hssldivide!(hssA, hssI)
+hssC = hssldivide!(copy(hssA), hssI)
+norm(full(hssC) - inv(A))/norm(inv(A))
 
 
 # # test computation of generators

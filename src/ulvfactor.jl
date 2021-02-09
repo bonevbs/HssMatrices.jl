@@ -35,7 +35,7 @@ function _ulvreduce!(D::Matrix{T}, U::Matrix{T}, V::Matrix{T}, b::Matrix{T}) whe
     # TODO: figure something out for this case
     println("warning k = ", k, " m = ", m)
     u = zeros(m, size(b,2))
-    zloc = Matrix{T}(undex, 0, size(b,2))
+    zloc = Matrix{T}(undef, 0, size(b,2))
   else
     # form QL decomposition of the row generators and apply it
     qlf = geqlf!(U);
