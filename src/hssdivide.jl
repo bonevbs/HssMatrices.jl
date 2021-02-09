@@ -9,8 +9,6 @@
 #
 # Written by Boris Bonev, Feb. 2021
 
-using Infiltrator
-
 ## ULV divide algorithm to apply the inverse to another HSS matrix
 # temporary name for function that actually just computes the ULV factorization
 # the cluster structure in hssA and hssB should be compatible w/e that means...
@@ -23,9 +21,9 @@ end
 function hssldivide!(hssA::HssNode{T}, hssB::HssNode{T}) where T
   # bottom-up stage of the ULV solution algorithm
   hssL, QU, QL, QV, mk, nk, ktree  = _ulvfactor_leaves!(hssA, 0)
-  hssB = _apply_transforms!(hssB, QU; transform = 'U')
+  hssB = _utransforms!(hssB, QU)
   hssQB = _extract_crows(hssB, nk)
-  hssY0 = _apply_transforms!(hssB, QL; transform = 'L')
+  hssY0 = _ltransforms!(hssB, QL)
   
   # TODO: there is still a bug at this step when recompression is involved
   hssQB = hssQB - hssL * hssY0 # multiply triangularized part with solved part and substract from the
@@ -41,7 +39,7 @@ function hssldivide!(hssA::HssNode{T}, hssB::HssNode{T}) where T
 
   # do the unpacking
   hssB = _unpackadd_rows!(hssY0, hssY1, ktree)
-  hssB = _apply_transforms!(hssB, QV; transform = 'V')
+  hssB = _vtransforms!(hssB, QV)
   hssB = recompress!(hssB)
 end
 
@@ -103,34 +101,38 @@ function _ulvfactor_leaves!(hssA::HssNode{T}, co::Int) where T
   return hssA, QU, QL, QV, mk, nk, ktree # not sure mk, nk are needed
 end
 
-
-
-# TODO: Re-write this in a more elegant and efficient manner using meta programming
-# apply orthogonal transforms to HSS matrix on the right
-function _apply_transforms!(hssA::HssLeaf, Q::BinaryNode; transform = 'L')
+## functions to apply U, L and V transforms at the leaf level to hssB
+function _utransforms!(hssA::HssLeaf, Q::BinaryNode)
   eltype(hssA) <: Complex ? adj = 'C' : adj = 'T'
-  if transform == 'U'
-    hssA.D = ormql!('L', adj, Q.data..., hssA.D)
-    hssA.U = ormql!('L', adj, Q.data..., hssA.U)
-  elseif transform == 'L'
-    nk = size(Q.data,1)
-    hssA.D[1:nk, :] = trsm('L', 'L', 'N', 'N', 1., Q.data, hssA.D[1:nk,:])
-    hssA.U[1:nk, :] = trsm('L', 'L', 'N', 'N', 1., Q.data, hssA.U[1:nk,:])
-    hssA.D[nk+1:end, :] .= eltype(hssA)(0)
-    hssA.U[nk+1:end, :] .= eltype(hssA)(0)
-  elseif transform == 'V'
-    hssA.D = ormlq!('L', adj, Q.data..., hssA.D)
-    hssA.U = ormlq!('L', adj, Q.data..., hssA.U)
-  else
-    throw(ArgumentError("Unknown transform specified"))
-  end
+  hssA.D = ormql!('L', adj, Q.data..., hssA.D)
+  hssA.U = ormql!('L', adj, Q.data..., hssA.U)
   return hssA
 end
-function _apply_transforms!(hssA::HssNode, Q::BinaryNode; transform = 'L')
-  hssA.A11 = _apply_transforms!(hssA.A11, Q.left; transform = transform)
-  hssA.A22 = _apply_transforms!(hssA.A22, Q.right; transform = transform)
-  hssA.sz1 = size(hssA.A11); hssA.sz2 = size(hssA.A22)
+function _ltransforms!(hssA::HssLeaf, Q::BinaryNode)
+  nk = size(Q.data,1)
+  hssA.D[1:nk, :] = trsm('L', 'L', 'N', 'N', 1., Q.data, hssA.D[1:nk,:])
+  hssA.U[1:nk, :] = trsm('L', 'L', 'N', 'N', 1., Q.data, hssA.U[1:nk,:])
+  hssA.D[nk+1:end, :] .= eltype(hssA)(0)
+  hssA.U[nk+1:end, :] .= eltype(hssA)(0)
   return hssA
+end
+function _vtransforms!(hssA::HssLeaf, Q::BinaryNode)
+  eltype(hssA) <: Complex ? adj = 'C' : adj = 'T'
+  hssA.D = ormlq!('L', adj, Q.data..., hssA.D)
+  hssA.U = ormlq!('L', adj, Q.data..., hssA.U)
+  return hssA
+end
+
+# generate branch level recursive function for each transform
+for f in (:_utransforms!, :_ltransforms!, :_vtransforms!)
+  @eval begin
+    function $f(hssA::HssNode, Qtree::BinaryNode)
+      hssA.A11 = $f(hssA.A11, Qtree.left)
+      hssA.A22 = $f(hssA.A22, Qtree.right)
+      hssA.sz1 = size(hssA.A11); hssA.sz2 = size(hssA.A22)
+      return hssA
+    end
+  end
 end
 
 ## extractor routines

@@ -34,3 +34,8 @@ x = randn(size(A,2), 10);
 println("Benchmarking ulvfactsolve...")
 b = randn(size(A,2), 10);
 @btime x = ulvfactsolve(hssA, b);
+
+# time hssldivide
+println("Benchmarking hssldivide...")
+hssX = compress_direct(1.0*Matrix(I, n, n), ccl, ccl)
+@btime hssC = hssldivide!(copy(hssA), hssX)
