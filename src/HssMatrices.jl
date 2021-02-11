@@ -9,9 +9,7 @@ module HssMatrices
   using LinearAlgebra
   using SparseArrays # introduce custom constructors from sparse matrices
   using AbstractTrees
-  using DataStructures
-  #using RecipesBase
-  using Plots # in the future, move to RecipesBase
+  using Plots # in the future, move to RecipesBase instead
 
   # load BLAS/LAPACK routines only used within the library# load efficient BLAS and LAPACK routines for factorizations
   import LinearAlgebra.LAPACK.geqlf!
