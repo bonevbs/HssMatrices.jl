@@ -51,7 +51,7 @@ module HssMatrices
   export plotranks, pcolor
 
   include("hssmatrix.jl")
-  include("prrqr2.jl")
+  include("prrqr.jl")
   include("binarytree.jl")
   include("clustertree.jl")
   include("compression.jl")

@@ -88,8 +88,8 @@ function _compress_direct!(A::Matrix{T}, Brow::Matrix{T}, Bcol::Matrix{T}, rcl::
   
   X = copy(Bcol')
   W, Bcol = _compress_block!(copy(Bcol'); tol, reltol);
-  println(size(X))
-  println(norm(X - W*Bcol)/norm(X))
+  #println(size(X))
+  #println(norm(X - W*Bcol)/norm(X))
   Bcol = copy(Bcol')
   W1 = W[1:rn1, :]
   W2 = W[rn1+1:end, :]
