@@ -38,4 +38,4 @@ b = randn(size(A,2), 10);
 # time hssldivide
 println("Benchmarking hssldivide...")
 hssX = compress_direct(1.0*Matrix(I, n, n), ccl, ccl)
-@btime hssC = hssldivide!(copy(hssA), hssX)
+@btime hssC = ldiv!(copy(hssA), hssX)

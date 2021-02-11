@@ -44,7 +44,7 @@ println("error in the inversion: ", norm(x-xcor)/norm(xcor))
 
 # test HSS division
 hssI = compress_direct(1.0*Matrix(I, n, n), ccl, ccl)
-hssC = hssldivide!(copy(hssA), hssI)
+hssC = ldiv!(copy(hssA), hssI)
 norm(full(hssC) - inv(A))/norm(inv(A))
 
 

@@ -51,8 +51,8 @@ end
 
 # convenience alias (maybe unnecessary)
 const HssMatrix{T} = Union{HssLeaf{T}, HssNode{T}}
-isleaf(hssA::HssMatrix) = typeof(hssA) <: HssLeaf # check whether making this inline speeds up things ?
-isbranch(hssA::HssMatrix) = typeof(hssA) <: HssNode
+@inline isleaf(hssA::HssMatrix) = typeof(hssA) <: HssLeaf # check whether making this inline speeds up things ?
+@inline isbranch(hssA::HssMatrix) = typeof(hssA) <: HssNode
 
 ## Base overrides
 Base.eltype(::Type{HssLeaf{T}}) where T = T
@@ -92,7 +92,6 @@ for op in (:+,:-)
       hssA.sz2 == hssB.sz2 || throw(DimensionMismatch("A22 has dimensions $(hssA.sz2) but B22 has dimensions $(hssA.sz2)"))
       hssC = HssNode($op(hssA.A11, hssB.A11), $op(hssA.A22, hssB.A22), blkdiag(hssA.B12, $op(hssB.B12)), blkdiag(hssA.B21, $op(hssB.B21)),
         blkdiag(hssA.R1, hssB.R1), blkdiag(hssA.W1, hssB.W1), blkdiag(hssA.R2, hssB.R2), blkdiag(hssA.W2, hssB.W2))
-      #recompress!(hssC)
     end
     #$op(L::LowRankMatrix,A::Matrix) = $op(promote(L,A)...)
     #$op(A::Matrix,L::LowRankMatrix) = $op(promote(A,L)...)

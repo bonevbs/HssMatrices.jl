@@ -12,13 +12,13 @@
 ## ULV divide algorithm to apply the inverse to another HSS matrix
 # temporary name for function that actually just computes the ULV factorization
 # the cluster structure in hssA and hssB should be compatible w/e that means...
-function hssldivide!(hssA::HssLeaf{T}, hssB::HssMatrix{T}) where T
+function ldiv!(hssA::HssLeaf{T}, hssB::HssMatrix{T}) where T
   D, U, V = _full(hssB)
   D = full(hssA) \ D
   return HssLeaf(D, U, V)
 end
 
-function hssldivide!(hssA::HssNode{T}, hssB::HssNode{T}) where T
+function ldiv!(hssA::HssNode{T}, hssB::HssNode{T}) where T
   # bottom-up stage of the ULV solution algorithm
   hssL, QU, QL, QV, mk, nk, ktree  = _ulvfactor_leaves!(hssA, 0)
   hssB = _utransforms!(hssB, QU)
@@ -35,7 +35,7 @@ function hssldivide!(hssA::HssNode{T}, hssB::HssNode{T}) where T
   hssL = prune_leaves!(hssL)
 
   # recursively call mldivide
-  hssY1 = hssldivide!(hssL, hssQB)
+  hssY1 = ldiv!(hssL, hssQB)
 
   # do the unpacking
   hssB = _unpackadd_rows!(hssY0, hssY1, ktree)
@@ -203,7 +203,7 @@ function _unpackadd_rows!(hssA::HssLeaf, D::Matrix, U::Matrix, V::Matrix, Brow::
   m, n = size(hssA.D)
 
   # perform the extend-add operation on the leaves
-  hssA.D[end-k+1:end, :] = hssA.D[end-k+1:end, :] .+ D
+  hssA.D[end-k+1:end, :] .= hssA.D[end-k+1:end, :] .+ D
   hssA.U = [hssA.U zeros(size(hssA.U,1), size(U,2)+k)]
   hssA.U[end-k+1:end, end-size(U,2)-k+1:1:end] = [U Matrix(I,k,k)]
   hssA.V = [hssA.V V Brow']

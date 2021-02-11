@@ -13,8 +13,17 @@ module HssMatrices
   #using RecipesBase
   using Plots # in the future, move to RecipesBase
 
+  # load BLAS/LAPACK routines only used within the library# load efficient BLAS and LAPACK routines for factorizations
+  import LinearAlgebra.LAPACK.geqlf!
+  import LinearAlgebra.LAPACK.gelqf!
+  import LinearAlgebra.LAPACK.ormql!
+  import LinearAlgebra.LAPACK.ormlq!
+  import LinearAlgebra.BLAS.ger!
+  import LinearAlgebra.BLAS.trsm
+
   # using InvertedIndices, DataStructures
   import Base.+, Base.-, Base.*, Base.Matrix, Base.copy, Base.size
+  import LinearAlgebra.ldiv!
 
   global tol = 1e-9
   global reltol = true
@@ -24,7 +33,7 @@ module HssMatrices
   # hssmatrix.jl
   export HssLeaf, HssNode, HssMatrix, isleaf, isbranch, hssrank, full, checkdims, prune_leaves!
   # prrqr.jl
-  export prrqr!, truncate_block!
+  export prrqr!
   # binarytree.jl
   export BinaryNode, leftchild, rightchild, isleaf, isbranch
   # clustertree.jl
@@ -37,14 +46,14 @@ module HssMatrices
   # ulvfactor.jl
   export ulvfactsolve
   # hssdivide.jl
-  export hssldivide!, _ulvfactor_leaves!
+  export ldiv!, _ulvfactor_leaves!
   # constructors.jl
   export lowrank2hss
   # visualization.jl
   export plotranks, pcolor
 
   include("hssmatrix.jl")
-  include("prrqr.jl")
+  include("prrqr2.jl")
   include("binarytree.jl")
   include("clustertree.jl")
   include("compression.jl")

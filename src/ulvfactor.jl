@@ -6,13 +6,6 @@
 #
 # Written by Boris Bonev, Nov. 2020
 
-# load efficient BLAS and LAPACK routines for factorizations
-import LinearAlgebra.LAPACK.geqlf!
-import LinearAlgebra.LAPACK.gelqf!
-import LinearAlgebra.LAPACK.ormql!
-import LinearAlgebra.LAPACK.ormlq!
-import LinearAlgebra.BLAS.trsm
-
 ## function for direct solution using the implicit ULV factorization
 ulvfactsolve(hssA::HssLeaf{T}, b::Matrix{T}) where T = hssA.D\b
 function ulvfactsolve(hssA::HssNode{T}, b::Matrix{T}) where T
@@ -89,7 +82,7 @@ function _ulvfactsolve!(hssA::HssNode{T}, b::Matrix{T}, z::Matrix{T}, co::Int; r
     QV = BinaryNode{Tuple{Vector{Int}, Matrix{T}, Vector{T}}}()
   else
     D, U, V, b, zloc, u, mk, nk, lqf = _ulvreduce!(D, U, V, b)
-    u = u .+ hssA.W1'*u1 .+ hssA.W2'*u2
+    u .= u .+ hssA.W1'*u1 .+ hssA.W2'*u2
     z[cols[1:mk], :] = zloc
     QV = BinaryNode((cols, lqf...))
   end

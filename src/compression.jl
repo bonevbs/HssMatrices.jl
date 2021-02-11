@@ -17,13 +17,6 @@
 #
 # Re-Written by Boris Bonev, Jan. 2021
 
-# Utility routine to provide access to pivoted rank-revealing qr
-function _compress_block!(A::Matrix{T}; tol, reltol) where T
-  Q, R, p = prrqr!(copy(A), tol; reltol)
-  rk = min(size(R)...)
-  return Q[:,1:rk], R[1:rk, invperm(p)]
-end
-
 ## Direct compression algorithm
 # wrapper function that will be exported
 function compress_direct(A::Matrix{T}, rcl::ClusterTree, ccl::ClusterTree; tol=tol, reltol=reltol) where T
@@ -92,8 +85,12 @@ function _compress_direct!(A::Matrix{T}, Brow::Matrix{T}, Bcol::Matrix{T}, rcl::
   R, Brow = _compress_block!(Brow; tol, reltol)
   R1 = R[1:rm1, :]
   R2 = R[rm1+1:end, :]
-      
-  W, Bcol = _compress_block!(copy(Bcol'); tol, reltol); Bcol = copy(Bcol')
+  
+  X = copy(Bcol')
+  W, Bcol = _compress_block!(copy(Bcol'); tol, reltol);
+  println(size(X))
+  println(norm(X - W*Bcol)/norm(X))
+  Bcol = copy(Bcol')
   W1 = W[1:rn1, :]
   W2 = W[rn1+1:end, :]
 
