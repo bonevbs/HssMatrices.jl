@@ -1,5 +1,8 @@
 # HssMatrices.jl
 
+[![Build status (Github Actions)](https://github.com/bonevbs/HssMatrices.jl/workflows/CI/badge.svg)](https://github.com/bonevbs/HssMatrices.jl/actions)
+[![codecov.io](http://codecov.io/github/bonevbs/HssMatrices.jl/coverage.svg?branch=main)](http://codecov.io/github/bonevbs/HssMatrices.jl?branch=main)
+
 A Julia package for hierarchically semi-separable (HSS) matrices.
 
 This package is currently under development, use at your own risk and stay tuned for more!
