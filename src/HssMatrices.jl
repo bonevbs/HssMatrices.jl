@@ -23,9 +23,9 @@ module HssMatrices
   import Base.+, Base.-, Base.*, Base.Matrix, Base.copy, Base.size
   import LinearAlgebra.ldiv!
 
-  global tol = 1e-9
-  global reltol = true
-  global leafsize = 64
+  const tol = 1e-9
+  const reltol = true # maybe instead do rtol, atol?
+  const leafsize = 64
 
   #export tol, reltol, leafsize
   # hssmatrix.jl

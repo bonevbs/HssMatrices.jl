@@ -12,8 +12,8 @@ mutable struct BinaryNode{T}
   # Root constructor
   BinaryNode{T}() where T = new{T}(nothing, nothing, nothing)
   BinaryNode{T}(data) where T = new{T}(data, nothing, nothing)
-  BinaryNode{T}(data, left, right) where T = new{T}(data, left, right)
-  BinaryNode{T}(left, right) where T = new{T}(nothing, left, right)
+  BinaryNode{T}(data, left::BinaryNode{T}, right::BinaryNode{T}) where T = new{T}(data, left, right)
+  BinaryNode{T}(left::BinaryNode{T}, right::BinaryNode{T}) where T = new{T}(nothing, left, right)
 end
 BinaryNode(data) = BinaryNode{typeof(data)}(data)
 BinaryNode(left::BinaryNode{T}, right::BinaryNode{T}) where T = BinaryNode{T}(left, right)
@@ -43,19 +43,19 @@ Base.IteratorEltype(::Type{<:TreeIterator{BinaryNode{T}}}) where T = Base.HasElt
 AbstractTrees.printnode(io::IO, node::BinaryNode) = print(io, node.data)
 Base.show(io::IO, node::BinaryNode) = print(io, "BinaryNode{$(eltype(node))}")
 
-# # Implement iteration over the immediate children of a node
-# function Base.iterate(node::BinaryNode)
-#   isdefined(node, :left) && return (node.left, false)
-#   isdefined(node, :right) && return (node.right, true)
-#   return nothing
-# end
-# function Base.iterate(node::BinaryNode, state::Bool)
-#   state && return nothing
-#   isdefined(node, :right) && return (node.right, true)
-#   return nothing
-# end
-# Base.IteratorSize(::Type{BinaryNode{T}}) where T = Base.SizeUnknown()
-# Base.eltype(::Type{BinaryNode{T}}) where T = BinaryNode{T}
+# Implement iteration over the immediate children of a node
+function Base.iterate(node::BinaryNode)
+  isdefined(node, :left) && return (node.left, false)
+  isdefined(node, :right) && return (node.right, true)
+  return nothing
+end
+function Base.iterate(node::BinaryNode, state::Bool)
+  state && return nothing
+  isdefined(node, :right) && return (node.right, true)
+  return nothing
+end
+Base.IteratorSize(::Type{BinaryNode{T}}) where T = Base.SizeUnknown()
+#Base.eltype(::Type{BinaryNode{T}}) where T = BinaryNode{T}
 
 # ## Things we need to define to leverage the native iterator over children
 # ## for the purposes of AbstractTrees.
