@@ -33,6 +33,15 @@ function AbstractTrees.children(node::BinaryNode)
   return ()
 end
 
+# routine to check equivalence of tree structures
+function compatible(node1::BinaryNode, node2::BinaryNode)
+  if isnothing(node1.left) ⊻ isnothing(node2.left) return false end
+  if isnothing(node1.right) ⊻ isnothing(node2.right) return false end
+  if !isnothing(node1.left) && !compatible(node1.left, node2.left) return false end
+  if !isnothing(node1.right) && !compatible(node1.right, node2.right) return false end
+  return true
+end
+
 ## Optional enhancements
 # These next two definitions allow inference of the item type in iteration.
 Base.eltype(::Type{BinaryNode{T}}) where T = T

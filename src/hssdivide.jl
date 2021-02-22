@@ -53,9 +53,10 @@ function _ulvreduce!(D::Matrix{T}, U::Matrix{T}, V::Matrix{T}) where T
   cind = m-k+1:m
   # can't be compressed, exit early
   if k >= m
-    # TODO: figure something out for this case
-    println("warning k = ", k, " m = ", m)
+    @warn "Encountered a full-rank block with k=$(k). Clustering might not yield best performance!"
     L1 = Matrix{T}(undef, 0, 0)
+    qlf = (Matrix{T}(undef, m, 0), Vector{T}(undef, 0))
+    lqf = (Matrix{T}(undef, 0, n), Vector{T}(undef, 0))
   else
     # form QL decomposition of the row generators and apply it
     qlf = geqlf!(U);
@@ -67,10 +68,7 @@ function _ulvreduce!(D::Matrix{T}, U::Matrix{T}, V::Matrix{T}) where T
     L1 = L1[:,1:nk]
     L2 = ormlq!('R', adj, lqf..., D[end-k+1:end,:]) # update the bottom block of the diagonal block
     V = ormlq!('L', 'N', lqf..., V) # compute the updated off-diagonal generators on the right
-    # pass on uncompressed parts of the problem
-    #D = L2[:, nk+1:end]
     D = L2
-    #V = V[nk+1:end, :]
   end
   return D, U, V, L1, qlf, lqf, m-k, nk, k
 end
@@ -104,6 +102,7 @@ end
 ## functions to apply U, L and V transforms at the leaf level to hssB
 function _utransforms!(hssA::HssLeaf, Q::BinaryNode)
   eltype(hssA) <: Complex ? adj = 'C' : adj = 'T'
+  if size(Q.data[1], 1) == 0 return hssA end
   hssA.D = ormql!('L', adj, Q.data..., hssA.D)
   hssA.U = ormql!('L', adj, Q.data..., hssA.U)
   return hssA

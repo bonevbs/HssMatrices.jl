@@ -16,7 +16,7 @@ function _compress_block!(A::Matrix{T}; tol::Real, reltol::Bool) where T
 end
 
 # method for computing the pivoted rank-revealing qr in place
-function prrqr!(A::Matrix{T}, tol::Real; reltol=false::Bool) where T
+function prrqr!(A::Matrix{T}, tol::Real; reltol=false) where T
   m, n = size(A)
 
   vnrm = sum(abs2, A, dims=1)

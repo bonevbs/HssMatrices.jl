@@ -17,9 +17,12 @@
 #
 # Re-Written by Boris Bonev, Jan. 2021
 
+using Infiltrator
+
 ## Direct compression algorithm
 # wrapper function that will be exported
 function compress_direct(A::Matrix{T}, rcl::ClusterTree, ccl::ClusterTree; tol=tol, reltol=reltol) where T
+  compatible(rcl, ccl) || throw(ArgumentError("row and column clusters are not compatible"))
   m = length(rcl.data); n = length(ccl.data)
   if size(A) != (m,n) throw(ArgumentError("size of row- and column-cluster-trees must match")) end
   Brow = Array{T}(undef, m, 0)
@@ -210,4 +213,153 @@ function _recompress!(hssA::HssNode{T}, Brow::Matrix{T}, Bcol::Matrix{T}; tol=to
   return hssA
 end
 
-# ## Randomized compression will go here...
+## Randomized compression algorithm
+#function compress_sampled()
+#end
+
+function compress_sampled(A::AbstractMatOrLinOp{T}, rcl::ClusterTree, ccl::ClusterTree; reltol=reltol, tol=tol) where T
+  m, n = size(A)
+  maxrank = n
+  compatible(rcl, ccl) || throw(ArgumentError("row and column clusters are not compatible"))
+  if typeof(A) <: AbstractMatrix A = LinOp(A) end
+  hssA = _extract_diagonal(A, rcl, ccl)
+
+  # compute initial sampling
+  k = 10; r = 5; bs = Integer(ceil(n*0.01)) # this should probably be better estimated
+  Ωcol = randn(n, k+r)
+  Ωrow = randn(m, k+r)
+  Scol = A*Ωcol # this should invoke the magic of the linearoperator.jl type
+  Srow = A*Ωrow
+  failed = true
+
+  while failed && k < maxrank
+    # TODO: In further versions we might want to re-use the information gained during previous attempts
+    hssA = _compress_sampled!(hssA, A, Scol, Srow, Ωcol, Ωrow, 0, 0; reltol=reltol, tol=tol, rootnode=true)
+
+    Ωcol_test = randn(n, bs)
+    Ωrow_test = randn(m, bs)
+    Scol_test = A*Ωcol_test
+    Srow_test = A'*Ωrow_test
+
+    #@infiltrate
+    nrm = sqrt(1/bs)*norm(Scol_test)
+    nrm_est = reltol ? sqrt(1/bs)*norm(Scol_test - hssA*Ωcol_test)/nrm : sqrt(1/bs)*norm(Scol_test - hssA*Ωcol_test)
+    failed = nrm_est > tol
+
+    if failed
+      @warn "Enlarging sampling space"
+      Ωcol = [Ωcol Ωcol_test]
+      Ωrow = [Ωrow Ωrow_test]
+      Scol = [Scol Scol_test]
+      Srow = [Srow Srow_test]
+      k = k+bs
+    end
+  end
+
+  return hssA
+end
+
+# this function compresses given the sampling matrix of rank k
+function _extract_diagonal(A::AbstractMatOrLinOp{T}, rcl::ClusterTree, ccl::ClusterTree) where T
+  if isleaf(rcl) # only check row cluster as we have already checked cluster equality
+    D = A[rcl.data, ccl.data]
+    return HssLeaf(D)
+  elseif isbranch(rcl)
+    A11 = _extract_diagonal(A, rcl.left, ccl.left)
+    A22 = _extract_diagonal(A, rcl.right, ccl.right)
+    B12 = Matrix{Float64}(undef,0,0)
+    B21 = Matrix{Float64}(undef,0,0)
+    return HssNode(A11, A22, B12, B21)
+  else
+    throw(ErrorException("Encountered node with only one child. Make sure that each node in the binary tree has either two children or is a leaf."))
+  end
+end
+
+# this function compresses given the sampling matrix of rank k
+function _compress_sampled!(hssA::HssLeaf, A, Scol::Matrix, Srow::Matrix, Ωcol::Matrix, Ωrow::Matrix, ro::Int, co::Int; reltol=reltol, tol=tol, rootnode=false)
+  Scol = Scol - hssA.D * Ωcol
+  Srow = Srow - hssA.D' * Ωrow
+  # take care of column-space
+
+  Xcol, Jcol = _interpolate(Scol'; tol=tol, reltol=reltol)
+  hssA.U = Xcol'
+  Scol = Scol[Jcol, :]
+  U = Xcol'
+  Jcol .= ro .+ Jcol
+
+  # same for the row-space
+  Xrow, Jrow = _interpolate(Srow'; tol=tol, reltol=reltol)
+  hssA.V = Xrow'
+  Srow = Srow[Jrow, :]
+  V = Xrow'
+  Jrow .= co .+ Jrow
+
+  return hssA, Scol, Srow, Ωcol, Ωrow, Jcol, Jrow, U, V 
+end
+function _compress_sampled!(hssA::HssNode, A, Scol::Matrix, Srow::Matrix, Ωcol::Matrix, Ωrow::Matrix, ro::Int, co::Int; reltol=reltol, tol=tol, rootnode=false)
+  m1, n1 = hssA.sz1; m2, n2 = hssA.sz2
+  hssA.A11, Scol1, Srow1, Ωcol1, Ωrow1, Jcol1, Jrow1, U1, V1 = _compress_sampled!(hssA.A11, A, Scol[1:m1, :], Srow[1:n1, :], Ωcol[1:n1, :], Ωrow[1:m1, :], ro, co; reltol=reltol, tol=tol)
+  hssA.A22, Scol2, Srow2, Ωcol2, Ωrow2, Jcol2, Jrow2, U2, V2 = _compress_sampled!(hssA.A22, A, Scol[m1+1:end, :], Srow[n1+1:end, :], Ωcol[n1+1:end, :], Ωrow[m1+1:end, :], ro+m1, co+n1; reltol=reltol, tol=tol)
+  
+  # update the sampling matrix based on the extracted generators
+  Ωcol2 = V2' * Ωcol2
+  Ωcol1 = V1' * Ωcol1
+  Ωrow2 = U2' * Ωrow2
+  Ωrow1 = U1' * Ωrow1
+  # step 1 in the algorithm: look only at extracted rows/cols
+  Jcol = [Jcol1; Jcol2]
+  Jrow = [Jrow1; Jrow2]
+  Ωcol = [Ωcol1; Ωcol2]
+  Ωrow = [Ωrow1; Ωrow2]
+  # extract the correct generator blocks
+  hssA.B12 = A[Jcol1, Jrow2]
+  hssA.B21 = A[Jcol2, Jrow1]
+  # subtract the diagonal block
+  Scol = [Scol1 .- hssA.B12  * Ωcol2;  Scol2 .- hssA.B21  * Ωcol1 ];
+  Srow = [Srow1 .- hssA.B21' * Ωrow2;  Srow2 .- hssA.B12' * Ωrow1 ];
+
+  if rootnode
+    rk1, wk1 = gensize(hssA.A11)
+    rk2, wk2 = gensize(hssA.A22)
+    hssA.R1 = Matrix{eltype(hssA)}(undef, rk1, 0)
+    hssA.R2 = Matrix{eltype(hssA)}(undef, rk2, 0)
+    hssA.W1 = Matrix{eltype(hssA)}(undef, wk1, 0)
+    hssA.W2 = Matrix{eltype(hssA)}(undef, wk2, 0)
+
+    return hssA
+  else
+    # take care of the columns
+    Xcol, Jcolloc = _interpolate(Scol')
+    hssA.R1 = Xcol[:, 1:size(Scol1, 1)]'
+    hssA.R2 = Xcol[:, size(Scol1, 1)+1:end]'
+    Scol = Scol[Jcolloc, :]
+    Jcol = Jcol[Jcolloc]
+    U = [hssA.R1; hssA.R2]
+    
+    # take care of the rows
+    Xrow, Jrowloc = _interpolate(Srow')
+    hssA.W1 = Xrow[:, 1:size(Srow1, 1)]'
+    hssA.W2 = Xrow[:, size(Srow1, 1)+1:end]'
+    Srow = Srow[Jrowloc, :]
+    Jrow = Jrow[Jrowloc]
+    V = [hssA.W1; hssA.W2]
+
+    return hssA, Scol, Srow, Ωcol, Ωrow, Jcol, Jrow, U, V
+  end
+end
+
+# interpolativde decomposition
+# still gotta figure out which qr decomposition to use
+function _interpolate(A; tol=tol, reltol=reltol)
+  # _, R, p = prrqr(A, tol; reltol=reltol)
+  # rk = min(size(R)...)
+  _, R, p  = qr(A, Val(true))
+  if reltol
+    rk = sum(abs.(diag(R)) .> tol);
+  else
+    rk = sum(abs.(diag(R)) .> tol * abs(R(1,1)));
+  end
+  J = p[1:rk];
+  X = R[1:rk, 1:rk]\R[1:rk,invperm(p)];
+  return X, J
+end

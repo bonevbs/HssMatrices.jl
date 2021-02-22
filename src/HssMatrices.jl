@@ -18,26 +18,34 @@ module HssMatrices
   import LinearAlgebra.LAPACK.ormlq!
   import LinearAlgebra.BLAS.ger!
   import LinearAlgebra.BLAS.trsm
+  import LinearAlgebra.ishermitian
 
   # using InvertedIndices, DataStructures
-  import Base.+, Base.-, Base.*, Base.Matrix, Base.copy, Base.size
-  import LinearAlgebra.ldiv!
+  import Base.+, Base.-, Base.*, Base.Matrix, Base.copy, Base.size, Base.show, Base.eltype
+  # more Base overrides - these still need to be added to HSS matrices!
+  import Base./, Base.\, Base.convert, Base.^, Base.getindex, Base.adjoint
+  import LinearAlgebra.ldiv!, LinearAlgebra.mul!
 
-  const tol = 1e-9
-  const reltol = true # maybe instead do rtol, atol?
+  # change this rtol, atol and modify the code to check for the one that is bigger
+  # const atol = 0
+  # const rtol = 1e-9
+  const tol = 1e-9 
+  const reltol = true
   const leafsize = 64
 
   #export tol, reltol, leafsize
   # hssmatrix.jl
   export HssLeaf, HssNode, HssMatrix, isleaf, isbranch, hssrank, full, checkdims, prune_leaves!
   # prrqr.jl
-  export prrqr!
+  export prrqr, prrqr!
   # binarytree.jl
   export BinaryNode, leftchild, rightchild, isleaf, isbranch
   # clustertree.jl
   export bisection_cluster, cluster
+  # linearoperator.jl
+  export AbstractLinearOperator, AbstractMatOrLinOp, LinearOperator, HermitianLinearOperator
   # compression.jl
-  export compress_direct, recompress!
+  export compress_direct, compress_sampled, recompress!
   # generators.jl  
   export generators, orthonormalize_generators!
   # matmul.jl
@@ -54,6 +62,7 @@ module HssMatrices
   include("prrqr.jl")
   include("binarytree.jl")
   include("clustertree.jl")
+  include("linearoperator.jl")
   include("compression.jl")
   include("generators.jl")
   include("matmul.jl")

@@ -23,9 +23,14 @@ ccl = bisection_cluster(1:n, lsz)
 
 # test compression
 hssA = compress_direct(A, rcl, ccl);
-@time hssA = compress_direct(A, rcl, ccl);
+@time hssA = compress_direct(A, rcl, ccl); 
 println("approximation error with direct compression: ", norm(A - full(hssA)))
 println("hss-rank with direct compression: ", hssrank(hssA))
+
+# test randomized compression
+hssB = compress_sampled(A, rcl, ccl);
+println("approximation error with randomized compression: ", norm(A - full(hssB)))
+println("hss-rank with randomized compression: ", hssrank(hssB))
 
 # test recompression
 hssB = recompress!(copy(hssA))
@@ -69,5 +74,3 @@ norm(full(hssC) - inv(A))/norm(inv(A))
 
 ### TODO
 # clean up the library Definitions
-# implement other variants of ULV
-# start work on the randomized compression

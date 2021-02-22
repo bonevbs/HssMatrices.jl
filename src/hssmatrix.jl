@@ -9,6 +9,10 @@ mutable struct HssLeaf{T<:Number} #<: AbstractMatrix{T}
   V ::Matrix{T}
 
   # constructor
+  function HssLeaf(D::Matrix{T}) where T
+    m, n = size(D)
+    new{T}(D, Matrix{T}(undef, m, 0), Matrix{T}(undef, n, 0))
+  end
   function HssLeaf(D::Matrix{T}, U::Matrix{T}, V::Matrix{T}) where T
     if size(D,1) != size(U,1) throw(ArgumentError("D and U must have same number of rows")) end
     if size(D,2) != size(V,1) throw(ArgumentError("D and V must have same number of columns")) end
@@ -55,18 +59,18 @@ const HssMatrix{T} = Union{HssLeaf{T}, HssNode{T}}
 @inline isbranch(hssA::HssMatrix) = typeof(hssA) <: HssNode
 
 ## Base overrides
-Base.eltype(::Type{HssLeaf{T}}) where T = T
-Base.eltype(::Type{HssNode{T}}) where T = T
+eltype(::Type{HssLeaf{T}}) where T = T
+eltype(::Type{HssNode{T}}) where T = T
 
-Base.size(hssA::HssLeaf) = size(hssA.D)
-Base.size(hssA::HssNode) = hssA.sz1 .+ hssA.sz2
-Base.size(hssA::HssMatrix, dim::Integer) = size(hssA)[dim]
+size(hssA::HssLeaf) = size(hssA.D)
+size(hssA::HssNode) = hssA.sz1 .+ hssA.sz2
+size(hssA::HssMatrix, dim::Integer) = size(hssA)[dim]
 
-Base.show(io::IO, hssA::HssLeaf) = print(io, "$(size(hssA,1))x$(size(hssA,2)) HssLeaf{$(eltype(hssA))}")
-Base.show(io::IO, hssA::HssNode) = print(io, "$(size(hssA,1))x$(size(hssA,2)) HssNode{$(eltype(hssA))}")
+show(io::IO, hssA::HssLeaf) = print(io, "$(size(hssA,1))x$(size(hssA,2)) HssLeaf{$(eltype(hssA))}")
+show(io::IO, hssA::HssNode) = print(io, "$(size(hssA,1))x$(size(hssA,2)) HssNode{$(eltype(hssA))}")
 
-Base.copy(hssA::HssLeaf) = HssLeaf(copy(hssA.D), copy(hssA.U), copy(hssA.V))
-Base.copy(hssA::HssNode) = HssNode(copy(hssA.A11), copy(hssA.A22), copy(hssA.B12), copy(hssA.B21), copy(hssA.R1), copy(hssA.W1), copy(hssA.R2), copy(hssA.W2))
+copy(hssA::HssLeaf) = HssLeaf(copy(hssA.D), copy(hssA.U), copy(hssA.V))
+copy(hssA::HssNode) = HssNode(copy(hssA.A11), copy(hssA.A22), copy(hssA.B12), copy(hssA.B21), copy(hssA.R1), copy(hssA.W1), copy(hssA.R2), copy(hssA.W2))
 
 # Define Matlab-like convenience functions, which are used throughout the library
 blkdiag(A::Matrix, B::Matrix) = [A zeros(size(A,1), size(B,2)); zeros(size(B,1), size(A,2)) B]
@@ -97,6 +101,13 @@ for op in (:+,:-)
     #$op(A::Matrix,L::LowRankMatrix) = $op(promote(A,L)...)
   end
 end
+
+# # getindex routines
+# # _getindex routines assume sorted arrays
+# _getindex(hssA::HssLeaf, i, j) = hssA.D[i, j], U[i, :], V[j, :]
+# function _getindex(hssA::HssNode, i, j)
+
+# end
 
 # Scalar multiplication
 *(a::Number, hssA::HssLeaf) = HssLeaf(a*hssA.D, hssA.U, hssA.V)
