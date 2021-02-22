@@ -21,16 +21,16 @@ using Infiltrator
 
 ## Direct compression algorithm
 # wrapper function that will be exported
-function compress_direct(A::Matrix{T}, rcl::ClusterTree, ccl::ClusterTree; tol=tol, reltol=reltol) where T
+function compress(A::Matrix{T}, rcl::ClusterTree, ccl::ClusterTree; tol=tol, reltol=reltol) where T
   compatible(rcl, ccl) || throw(ArgumentError("row and column clusters are not compatible"))
   m = length(rcl.data); n = length(ccl.data)
   if size(A) != (m,n) throw(ArgumentError("size of row- and column-cluster-trees must match")) end
   Brow = Array{T}(undef, m, 0)
   Bcol = Array{T}(undef, 0, n)
   if isleaf(rcl) && isleaf(ccl)
-    hssA, _, _ = _compress_direct!(A, Brow, Bcol, rcl.data, ccl.data; tol, reltol)
+    hssA, _, _ = _compress!(A, Brow, Bcol, rcl.data, ccl.data; tol, reltol)
   elseif isbranch(rcl) && isbranch(ccl)
-    hssA, _, _ = _compress_direct!(A, Brow, Bcol, rcl, ccl; tol, reltol)
+    hssA, _, _ = _compress!(A, Brow, Bcol, rcl, ccl; tol, reltol)
   else
     throw(ArgumentError("row and column clusters are not compatible"))
   end
@@ -38,14 +38,14 @@ function compress_direct(A::Matrix{T}, rcl::ClusterTree, ccl::ClusterTree; tol=t
 end
 
 # leaf node function for compression
-function _compress_direct!(A::Matrix{T}, Brow::Matrix{T}, Bcol::Matrix{T}, rows::UnitRange{Int}, cols::UnitRange{Int}; tol, reltol) where T
+function _compress!(A::Matrix{T}, Brow::Matrix{T}, Bcol::Matrix{T}, rows::UnitRange{Int}, cols::UnitRange{Int}; tol, reltol) where T
   U, Brow = _compress_block!(Brow; tol, reltol)
   V, Bcol = _compress_block!(copy(Bcol'); tol, reltol) #TODO: write code that is better at dealing with Julia's lazy transpose
   return HssLeaf(A[rows, cols], U, V), Brow, copy(Bcol')
 end
 
 # branch node function for compression
-function _compress_direct!(A::Matrix{T}, Brow::Matrix{T}, Bcol::Matrix{T}, rcl::ClusterTree, ccl::ClusterTree; tol, reltol) where T
+function _compress!(A::Matrix{T}, Brow::Matrix{T}, Bcol::Matrix{T}, rcl::ClusterTree, ccl::ClusterTree; tol, reltol) where T
   m1 = length(rcl.left.data); m2 = length(rcl.right.data)
   n1 = length(ccl.left.data); n2 = length(ccl.right.data)
 
@@ -56,9 +56,9 @@ function _compress_direct!(A::Matrix{T}, Brow::Matrix{T}, Bcol::Matrix{T}, rcl::
   Brow1 = [A[rows1, cols2]  Brow[1:m1, :]]
   Bcol1 = [A[rows2, cols1]; Bcol[:, 1:n1]]
   if isleaf(rcl.left) && isleaf(ccl.left)
-    A11, Brow1, Bcol1 = _compress_direct!(A, Brow1, Bcol1, rows1, cols1; tol, reltol)
+    A11, Brow1, Bcol1 = _compress!(A, Brow1, Bcol1, rows1, cols1; tol, reltol)
   elseif isbranch(rcl.left) && isbranch(ccl.left)
-    A11, Brow1, Bcol1 = _compress_direct!(A, Brow1, Bcol1, rcl.left, ccl.left; tol, reltol)
+    A11, Brow1, Bcol1 = _compress!(A, Brow1, Bcol1, rcl.left, ccl.left; tol, reltol)
   else
     throw(ArgumentError("row and column clusters are not compatible"))
   end
@@ -67,9 +67,9 @@ function _compress_direct!(A::Matrix{T}, Brow::Matrix{T}, Bcol::Matrix{T}, rcl::
   Brow2 = [Bcol1[1:m2, :]  Brow[m1+1:end, :]]
   Bcol2 = [Brow1[:, 1:n2]; Bcol[:, n1+1:end]]
   if isleaf(rcl.right) && isleaf(ccl.right)
-    A22, Brow2, Bcol2 = _compress_direct!(A, Brow2, Bcol2, rows2, cols2; tol, reltol)
+    A22, Brow2, Bcol2 = _compress!(A, Brow2, Bcol2, rows2, cols2; tol, reltol)
   elseif isbranch(rcl.right) && isbranch(ccl.right)
-    A22, Brow2, Bcol2 = _compress_direct!(A, Brow2, Bcol2, rcl.right, ccl.right; tol, reltol)
+    A22, Brow2, Bcol2 = _compress!(A, Brow2, Bcol2, rcl.right, ccl.right; tol, reltol)
   else
     throw(ArgumentError("row and column clusters are not compatible"))
   end
@@ -214,10 +214,23 @@ function _recompress!(hssA::HssNode{T}, Brow::Matrix{T}, Bcol::Matrix{T}; tol=to
 end
 
 ## Randomized compression algorithm
-#function compress_sampled()
-#end
+function randcompress(A::AbstractMatOrLinOp{T}, rcl::ClusterTree, ccl::ClusterTree, kest::Int; reltol=reltol, tol=tol, r=10) where T
+  m, n = size(A)
+  compatible(rcl, ccl) || throw(ArgumentError("row and column clusters are not compatible"))
+  if typeof(A) <: AbstractMatrix A = LinOp(A) end
+  hssA = _extract_diagonal(A, rcl, ccl)
 
-function compress_sampled(A::AbstractMatOrLinOp{T}, rcl::ClusterTree, ccl::ClusterTree; reltol=reltol, tol=tol) where T
+  # compute initial sampling
+  k = kest; r = 5;
+  Ωcol = randn(n, k+r)
+  Ωrow = randn(m, k+r)
+  Scol = A*Ωcol # this should invoke the magic of the linearoperator.jl type
+  Srow = A*Ωrow
+  hssA = _randcompress!(hssA, A, Scol, Srow, Ωcol, Ωrow, 0, 0; reltol=reltol, tol=tol, rootnode=true)
+  return hssA
+end
+
+function randcompress_adaptive(A::AbstractMatOrLinOp{T}, rcl::ClusterTree, ccl::ClusterTree; reltol=reltol, tol=tol, kest=20, r=10, stepsize=kest) where T
   m, n = size(A)
   maxrank = n
   compatible(rcl, ccl) || throw(ArgumentError("row and column clusters are not compatible"))
@@ -225,7 +238,8 @@ function compress_sampled(A::AbstractMatOrLinOp{T}, rcl::ClusterTree, ccl::Clust
   hssA = _extract_diagonal(A, rcl, ccl)
 
   # compute initial sampling
-  k = 10; r = 5; bs = Integer(ceil(n*0.01)) # this should probably be better estimated
+  k = kest; r = 5; bs = stepsize
+  #bs = Integer(ceil(n*0.01)) # this should probably be better estimated
   Ωcol = randn(n, k+r)
   Ωrow = randn(m, k+r)
   Scol = A*Ωcol # this should invoke the magic of the linearoperator.jl type
@@ -234,7 +248,7 @@ function compress_sampled(A::AbstractMatOrLinOp{T}, rcl::ClusterTree, ccl::Clust
 
   while failed && k < maxrank
     # TODO: In further versions we might want to re-use the information gained during previous attempts
-    hssA = _compress_sampled!(hssA, A, Scol, Srow, Ωcol, Ωrow, 0, 0; reltol=reltol, tol=tol, rootnode=true)
+    hssA = _randcompress!(hssA, A, Scol, Srow, Ωcol, Ωrow, 0, 0; reltol=reltol, tol=tol, rootnode=true)
 
     Ωcol_test = randn(n, bs)
     Ωrow_test = randn(m, bs)
@@ -247,7 +261,7 @@ function compress_sampled(A::AbstractMatOrLinOp{T}, rcl::ClusterTree, ccl::Clust
     failed = nrm_est > tol
 
     if failed
-      @warn "Enlarging sampling space"
+      #@warn "Enlarging sampling space"
       Ωcol = [Ωcol Ωcol_test]
       Ωrow = [Ωrow Ωrow_test]
       Scol = [Scol Scol_test]
@@ -276,7 +290,7 @@ function _extract_diagonal(A::AbstractMatOrLinOp{T}, rcl::ClusterTree, ccl::Clus
 end
 
 # this function compresses given the sampling matrix of rank k
-function _compress_sampled!(hssA::HssLeaf, A, Scol::Matrix, Srow::Matrix, Ωcol::Matrix, Ωrow::Matrix, ro::Int, co::Int; reltol=reltol, tol=tol, rootnode=false)
+function _randcompress!(hssA::HssLeaf, A, Scol::Matrix, Srow::Matrix, Ωcol::Matrix, Ωrow::Matrix, ro::Int, co::Int; reltol=reltol, tol=tol, rootnode=false)
   Scol = Scol - hssA.D * Ωcol
   Srow = Srow - hssA.D' * Ωrow
   # take care of column-space
@@ -296,10 +310,10 @@ function _compress_sampled!(hssA::HssLeaf, A, Scol::Matrix, Srow::Matrix, Ωcol:
 
   return hssA, Scol, Srow, Ωcol, Ωrow, Jcol, Jrow, U, V 
 end
-function _compress_sampled!(hssA::HssNode, A, Scol::Matrix, Srow::Matrix, Ωcol::Matrix, Ωrow::Matrix, ro::Int, co::Int; reltol=reltol, tol=tol, rootnode=false)
+function _randcompress!(hssA::HssNode, A, Scol::Matrix, Srow::Matrix, Ωcol::Matrix, Ωrow::Matrix, ro::Int, co::Int; reltol=reltol, tol=tol, rootnode=false)
   m1, n1 = hssA.sz1; m2, n2 = hssA.sz2
-  hssA.A11, Scol1, Srow1, Ωcol1, Ωrow1, Jcol1, Jrow1, U1, V1 = _compress_sampled!(hssA.A11, A, Scol[1:m1, :], Srow[1:n1, :], Ωcol[1:n1, :], Ωrow[1:m1, :], ro, co; reltol=reltol, tol=tol)
-  hssA.A22, Scol2, Srow2, Ωcol2, Ωrow2, Jcol2, Jrow2, U2, V2 = _compress_sampled!(hssA.A22, A, Scol[m1+1:end, :], Srow[n1+1:end, :], Ωcol[n1+1:end, :], Ωrow[m1+1:end, :], ro+m1, co+n1; reltol=reltol, tol=tol)
+  hssA.A11, Scol1, Srow1, Ωcol1, Ωrow1, Jcol1, Jrow1, U1, V1 = _randcompress!(hssA.A11, A, Scol[1:m1, :], Srow[1:n1, :], Ωcol[1:n1, :], Ωrow[1:m1, :], ro, co; reltol=reltol, tol=tol)
+  hssA.A22, Scol2, Srow2, Ωcol2, Ωrow2, Jcol2, Jrow2, U2, V2 = _randcompress!(hssA.A22, A, Scol[m1+1:end, :], Srow[n1+1:end, :], Ωcol[n1+1:end, :], Ωrow[m1+1:end, :], ro+m1, co+n1; reltol=reltol, tol=tol)
   
   # update the sampling matrix based on the extracted generators
   Ωcol2 = V2' * Ωcol2
@@ -351,8 +365,8 @@ end
 # interpolativde decomposition
 # still gotta figure out which qr decomposition to use
 function _interpolate(A; tol=tol, reltol=reltol)
-  # _, R, p = prrqr(A, tol; reltol=reltol)
-  # rk = min(size(R)...)
+  #_, R, p = prrqr(A, tol; reltol=reltol)
+  #rk = min(size(R)...)
   _, R, p  = qr(A, Val(true))
   if reltol
     rk = sum(abs.(diag(R)) .> tol);

@@ -7,6 +7,7 @@ using LinearAlgebra
 
 # generate convenience access functions that copies A
 prrqr(A::Matrix{T}, tol; reltol=false) where T = prrqr!(copy(A), tol; reltol=reltol)
+prrqr(A::Adjoint, tol; reltol=false) = prrqr(collect(A), tol; reltol=reltol)
 
 # Utility routine to provide access to pivoted rank-revealing qr
 function _compress_block!(A::Matrix{T}; tol::Real, reltol::Bool) where T

@@ -15,11 +15,15 @@ lsz = 64;
 rcl = bisection_cluster(1:m, lsz)
 ccl = bisection_cluster(1:n, lsz)
 
-hssA = compress_direct(A, rcl, ccl);
+hssA = compress(A, rcl, ccl);
 
 # time compression
 println("Benchmarking compression...")
-@btime hssA = compress_direct(A, rcl, ccl);
+@btime hssA = compress(A, rcl, ccl);
+
+# time compression
+println("Benchmarking randomized compression...")
+@btime hssA = randcompress_adaptive(A, rcl, ccl);
 
 println("Benchmarking re-compression...")
 hssB = copy(hssA)
@@ -37,5 +41,5 @@ b = randn(size(A,2), 10);
 
 # time hssldivide
 println("Benchmarking hssldivide...")
-hssX = compress_direct(1.0*Matrix(I, n, n), ccl, ccl)
+hssX = compress(1.0*Matrix(I, n, n), ccl, ccl)
 @btime hssC = ldiv!(copy(hssA), hssX)

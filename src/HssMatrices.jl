@@ -45,7 +45,7 @@ module HssMatrices
   # linearoperator.jl
   export AbstractLinearOperator, AbstractMatOrLinOp, LinearOperator, HermitianLinearOperator
   # compression.jl
-  export compress_direct, compress_sampled, recompress!
+  export compress, randcompress, randcompress_adaptive, recompress!
   # generators.jl  
   export generators, orthonormalize_generators!
   # matmul.jl

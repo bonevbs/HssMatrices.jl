@@ -22,13 +22,13 @@ rcl = bisection_cluster(1:m, lsz)
 ccl = bisection_cluster(1:n, lsz)
 
 # test compression
-hssA = compress_direct(A, rcl, ccl);
-@time hssA = compress_direct(A, rcl, ccl); 
+hssA = compress(A, rcl, ccl);
+@time hssA = compress(A, rcl, ccl); 
 println("approximation error with direct compression: ", norm(A - full(hssA)))
 println("hss-rank with direct compression: ", hssrank(hssA))
 
 # test randomized compression
-hssB = compress_sampled(A, rcl, ccl);
+hssB = randcompress_adaptive(A, rcl, ccl);
 println("approximation error with randomized compression: ", norm(A - full(hssB)))
 println("hss-rank with randomized compression: ", hssrank(hssB))
 
