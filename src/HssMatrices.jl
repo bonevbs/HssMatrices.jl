@@ -21,9 +21,9 @@ module HssMatrices
   import LinearAlgebra.ishermitian
 
   # using InvertedIndices, DataStructures
-  import Base.+, Base.-, Base.*, Base.Matrix, Base.copy, Base.size, Base.show, Base.eltype
+  import Base.+, Base.-, Base.*, Base.\, Base.Matrix, Base.copy, Base.size, Base.show, Base.eltype
   # more Base overrides - these still need to be added to HSS matrices!
-  import Base./, Base.\, Base.convert, Base.^, Base.getindex, Base.adjoint
+  import Base./, Base.convert, Base.^, Base.getindex, Base.adjoint
   import LinearAlgebra.ldiv!, LinearAlgebra.mul!
 
   # change this rtol, atol and modify the code to check for the one that is bigger

@@ -20,7 +20,7 @@ end
 
 function ldiv!(hssA::HssNode{T}, hssB::HssNode{T}) where T
   # bottom-up stage of the ULV solution algorithm
-  hssL, QU, QL, QV, mk, nk, ktree  = _ulvfactor_leaves!(hssA, 0)
+  hssL, QU, QL, QV, mk, nk, ktree  = _ulvfactor_leaves!(copy(hssA), 0)
   hssB = _utransforms!(hssB, QU)
   hssQB = _extract_crows(hssB, nk)
   hssY0 = _ltransforms!(hssB, QL)

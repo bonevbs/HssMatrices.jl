@@ -72,6 +72,16 @@ show(io::IO, hssA::HssNode) = print(io, "$(size(hssA,1))x$(size(hssA,2)) HssNode
 copy(hssA::HssLeaf) = HssLeaf(copy(hssA.D), copy(hssA.U), copy(hssA.V))
 copy(hssA::HssNode) = HssNode(copy(hssA.A11), copy(hssA.A22), copy(hssA.B12), copy(hssA.B21), copy(hssA.R1), copy(hssA.W1), copy(hssA.R2), copy(hssA.W2))
 
+# maybe replace that later wit ha lazy adjjoint, which swaps cols and rows when called
+# TODO: create AbstractHssMatrix type to contain the adjoint as well
+# _getproperty(hssA::Adjoint{T, HssLeaf{T}}, ::Val{:D}l) where T  = adjoint(hssA.D)
+# _getproperty(hssA::Adjoint{T, HssLeaf{T}}, ::Val{:U}l) where T  = hssA.V
+# _getproperty(hssA::Adjoint{T, HssLeaf{T}}, ::Val{:V}l) where T  = hssA.U
+# _getproperty(hssA::Adjoint{T, HssNode{T}}, ::Val{:A11}l) where T  = adjoint(hssA.A11)
+# Base.getproperty(hssA::Adjoint{T, HssMatrix{T}}, s::Symbol) where T = _getproperty(hssA, Val{s}())
+adjoint(hssA::HssLeaf) = HssLeaf(collect(hssA.D'), hssA.V, hssA.U)
+adjoint(hssA::HssNode) = HssNode(adjoint(hssA.A11), adjoint(hssA.A22), collect(hssA.B21'), collect(hssA.B12'), hssA.W1, hssA.R1, hssA.W2, hssA.R2)
+
 # Define Matlab-like convenience functions, which are used throughout the library
 blkdiag(A::Matrix, B::Matrix) = [A zeros(size(A,1), size(B,2)); zeros(size(B,1), size(A,2)) B]
 blkdiag(A::Matrix... ) = blkdiag(A[1], blkdiag(A[2:end]...))
@@ -108,6 +118,10 @@ end
 # function _getindex(hssA::HssNode, i, j)
 
 # end
+
+# matrix division involving HSS matrices
+\(hssA::HssMatrix, B::Matrix) = ulvfactsolve(hssA, B)
+\(hssA::HssMatrix, hssB::HssMatrix) = ldiv!(hssA, copy(hssB))
 
 # Scalar multiplication
 *(a::Number, hssA::HssLeaf) = HssLeaf(a*hssA.D, hssA.U, hssA.V)

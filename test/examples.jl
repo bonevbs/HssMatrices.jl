@@ -48,7 +48,9 @@ xcor = A\b;
 println("error in the inversion: ", norm(x-xcor)/norm(xcor))
 
 # test HSS division
-hssI = compress_direct(1.0*Matrix(I, n, n), ccl, ccl)
+Id(i,j) = Matrix{Float64}(i.*ones(length(j))' .== ones(length(i)).*j')
+IdOp = LinearOperator{Float64}(n, n, (y,_,x) -> x, (y,_,x) -> x, (i,j) -> Id(i,j), nothing)
+hssI = randcompress(IdOp, ccl, ccl, 0)
 hssC = ldiv!(copy(hssA), hssI)
 norm(full(hssC) - inv(A))/norm(inv(A))
 
