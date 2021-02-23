@@ -81,6 +81,8 @@ copy(hssA::HssNode) = HssNode(copy(hssA.A11), copy(hssA.A22), copy(hssA.B12), co
 # Base.getproperty(hssA::Adjoint{T, HssMatrix{T}}, s::Symbol) where T = _getproperty(hssA, Val{s}())
 adjoint(hssA::HssLeaf) = HssLeaf(collect(hssA.D'), hssA.V, hssA.U)
 adjoint(hssA::HssNode) = HssNode(adjoint(hssA.A11), adjoint(hssA.A22), collect(hssA.B21'), collect(hssA.B12'), hssA.W1, hssA.R1, hssA.W2, hssA.R2)
+transpose(hssA::HssLeaf) = HssLeaf(collect(transpose(hssA.D)), hssA.V, hssA.U)
+transpose(hssA::HssNode) = HssNode(transpose(hssA.A11), transpose(hssA.A22), collect(transpose(hssA.B21)), collect(transpose(hssA.B12)), hssA.W1, hssA.R1, hssA.W2, hssA.R2)
 
 # Define Matlab-like convenience functions, which are used throughout the library
 blkdiag(A::Matrix, B::Matrix) = [A zeros(size(A,1), size(B,2)); zeros(size(B,1), size(A,2)) B]
