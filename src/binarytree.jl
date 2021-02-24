@@ -22,6 +22,21 @@ BinaryNode(data, left::BinaryNode, right::BinaryNode) = BinaryNode{typeof(data)}
 isleaf(node::BinaryNode) = isnothing(node.left) && isnothing(node.right)
 isbranch(node::BinaryNode) = !isnothing(node.left) && !isnothing(node.right)
 
+depth(node::BinaryNode) = _depth(node, 1)
+function _depth(node::BinaryNode, level)
+  if isleaf(node)
+    return level
+  elseif !isnothing(node.left)
+    if !isnothing(node.right)
+      return max(_depth(node.left, level+1), _depth(node.right, level+1))
+    else
+      return _depth(node.left, level+1)
+    end
+  else
+    return _depth(node.right, level+1)
+  end
+end
+
 function AbstractTrees.children(node::BinaryNode)
   if !isnothing(node.left)
     if !isnothing(node.right)

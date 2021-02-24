@@ -29,17 +29,19 @@ module HssMatrices
   # change this rtol, atol and modify the code to check for the one that is bigger
   # const atol = 0
   # const rtol = 1e-9
-  const tol = 1e-9 
-  const reltol = true
-  const leafsize = 64
+  #const tol = 1e-9 
+  #const reltol = true
+  #const leafsize = 64
 
   #export tol, reltol, leafsize
+  # HssMatrices.jl
+  export HssOptions
   # hssmatrix.jl
   export HssLeaf, HssNode, HssMatrix, isleaf, isbranch, hssrank, full, checkdims, prune_leaves!
   # prrqr.jl
   export prrqr, prrqr!
   # binarytree.jl
-  export BinaryNode, leftchild, rightchild, isleaf, isbranch
+  export BinaryNode, leftchild, rightchild, isleaf, isbranch, depth
   # clustertree.jl
   export bisection_cluster, cluster
   # linearoperator.jl
@@ -57,6 +59,53 @@ module HssMatrices
   export lowrank2hss
   # visualization.jl
   export plotranks, pcolor
+
+  mutable struct HssOptions
+    atol::Float64
+    rtol::Float64
+    leafsize::Int
+    noversampling::Int
+    stepsize::Int
+    recompress::Bool
+    verbose::Bool
+  end
+  
+  # set default values
+  function HssOptions(::Type{T}; args...) where T
+    opts = HssOptions(
+      1e6,                # atol # by default turned off
+      1e-9,               # rtol
+      64,                 # leafsize
+      10,                 # noversampling
+      20,                 # stepsize
+      true,               # recompress
+      true,               # verbose
+    )
+    for (key, value) in args
+      setfield!(opts, key, value)
+    end
+    opts
+  end
+  HssOptions(; args...) = HssOptions(Float64; args...)
+  
+  function copy(opts::HssOptions; args...)
+    opts_ = HssOptions()
+    for field in fieldnames(typeof(opts))
+      setfield!(opts_, field, getfield(opts, field))
+    end
+    for (key, value) in args
+      setfield!(opts_, key, value)
+    end
+    opts_
+  end
+  
+  function chkopts!(opts::HssOptions)
+    opts.atol > 0 || throw(ArgumentError("atol"))
+    opts.rtol > 0 || throw(ArgumentError("rtol"))
+    opts.leafsize >= 1 || throw(ArgumentError("leafsize"))
+    opts.stepsize >= 1 || throw(ArgumentError("stepsize"))
+    opts.noversampling >= 1 || throw(ArgumentError("noversampling"))
+  end
 
   include("hssmatrix.jl")
   include("prrqr.jl")
