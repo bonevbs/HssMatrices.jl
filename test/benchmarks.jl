@@ -41,5 +41,5 @@ b = randn(size(A,2), 10);
 
 # time hssldivide
 println("Benchmarking hssldivide...")
-hssX = compress(1.0*Matrix(I, n, n), ccl, ccl, atol=1e9, rtol=1e9) # this should probably be one constructor
-@btime hssC = ldiv!(copy(hssA), hssX)
+hssX = compress(1.0*Matrix(I, n, n), ccl, ccl, atol=1e9, rtol=1e-9) # this should probably be one constructor
+#@btime hssC = ldiv!(copy(hssA), hssX)

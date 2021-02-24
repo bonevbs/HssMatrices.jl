@@ -38,14 +38,14 @@ function compress(A::Matrix{T}, rcl::ClusterTree, ccl::ClusterTree, opts::HssOpt
 end
 
 # leaf node function for compression
-function _compress!(A::Matrix{T}, Brow::Matrix{T}, Bcol::Matrix{T}, rows::UnitRange{Int}, cols::UnitRange{Int}, atol::Real, rtol::Real) where T
+function _compress!(A::Matrix{T}, Brow::Matrix{T}, Bcol::Matrix{T}, rows::UnitRange{Int}, cols::UnitRange{Int}, atol, rtol) where T
   U, Brow = _compress_block!(Brow, atol, rtol)
   V, Bcol = _compress_block!(copy(Bcol'), atol, rtol) #TODO: write code that is better at dealing with Julia's lazy transpose
   return HssLeaf(A[rows, cols], U, V), Brow, copy(Bcol')
 end
 
 # branch node function for compression
-function _compress!(A::Matrix{T}, Brow::Matrix{T}, Bcol::Matrix{T}, rcl::ClusterTree, ccl::ClusterTree, atol::Real, rtol::Real) where T
+function _compress!(A::Matrix{T}, Brow::Matrix{T}, Bcol::Matrix{T}, rcl::ClusterTree, ccl::ClusterTree, atol, rtol) where T
   m1 = length(rcl.left.data); m2 = length(rcl.right.data)
   n1 = length(ccl.left.data); n2 = length(ccl.right.data)
 
@@ -298,7 +298,7 @@ function _extract_diagonal(A::AbstractMatOrLinOp{T}, rcl::ClusterTree, ccl::Clus
 end
 
 # this function compresses given the sampling matrix of rank k
-function _randcompress!(hssA::HssLeaf, A, Scol::Matrix, Srow::Matrix, Ωcol::Matrix, Ωrow::Matrix, ro::Int, co::Int, atol::Real, rtol::Real; rootnode=false)
+function _randcompress!(hssA::HssLeaf, A, Scol::Matrix, Srow::Matrix, Ωcol::Matrix, Ωrow::Matrix, ro::Int, co::Int, atol, rtol; rootnode=false)
   Scol = Scol - hssA.D * Ωcol
   Srow = Srow - hssA.D' * Ωrow
   # take care of column-space
@@ -318,7 +318,7 @@ function _randcompress!(hssA::HssLeaf, A, Scol::Matrix, Srow::Matrix, Ωcol::Mat
 
   return hssA, Scol, Srow, Ωcol, Ωrow, Jcol, Jrow, U, V 
 end
-function _randcompress!(hssA::HssNode, A, Scol::Matrix, Srow::Matrix, Ωcol::Matrix, Ωrow::Matrix, ro::Int, co::Int, atol::Real, rtol::Real; rootnode=false)
+function _randcompress!(hssA::HssNode, A, Scol::Matrix, Srow::Matrix, Ωcol::Matrix, Ωrow::Matrix, ro::Int, co::Int, atol, rtol; rootnode=false)
   m1, n1 = hssA.sz1; m2, n2 = hssA.sz2
   hssA.A11, Scol1, Srow1, Ωcol1, Ωrow1, Jcol1, Jrow1, U1, V1 = _randcompress!(hssA.A11, A, Scol[1:m1, :], Srow[1:n1, :], Ωcol[1:n1, :], Ωrow[1:m1, :], ro, co, atol, rtol)
   hssA.A22, Scol2, Srow2, Ωcol2, Ωrow2, Jcol2, Jrow2, U2, V2 = _randcompress!(hssA.A22, A, Scol[m1+1:end, :], Srow[n1+1:end, :], Ωcol[n1+1:end, :], Ωrow[m1+1:end, :], ro+m1, co+n1, atol, rtol)
