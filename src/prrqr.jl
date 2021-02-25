@@ -7,11 +7,11 @@ using LinearAlgebra, LowRankApprox
 
 # generate convenience access functions that copies A
 prrqr(A::Matrix, atol, rtol) = prrqr!(copy(A), atol, rtol)
-prrqr(A::Adjoint, atol, rtol) = prrqr(collect(A), atol, rtol)
-prrqr!(A::Adjoint, atol, rtol) = prrqr(collect(A), atol, rtol)
+prrqr(A::Adjoint, atol, rtol) = prrqr!(collect(A), atol, rtol)
+prrqr!(A::Adjoint, atol, rtol) = prrqr!(collect(A), atol, rtol)
 
 # Utility routine to provide access to pivoted rank-revealing qr
-function _compress_block!(A::AbstractMatrix{T}, atol::Real, rtol::Real) where T
+function _compress_block!(A::AbstractMatrix{T}, atol::Float64, rtol::Float64) where T
   Q, R, p = prrqr!(A, atol, rtol)
   rk = min(size(R)...)
   return Q[:,1:rk], R[1:rk, invperm(p)]
@@ -21,7 +21,7 @@ function _compress_block!(A::AbstractMatrix{T}, atol::Real, rtol::Real) where T
 end
 
 # method for computing the pivoted rank-revealing qr in place
-function prrqr!(A::Matrix{T}, atol::Real, rtol::Real) where T
+function prrqr!(A::Matrix{T}, atol::Float64, rtol::Float64) where T
   m, n = size(A)
 
   vnrm = sum(abs2, A, dims=1)

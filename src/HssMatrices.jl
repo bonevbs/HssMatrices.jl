@@ -93,8 +93,8 @@ module HssMatrices
   end
   
   function chkopts!(opts::HssOptions)
-    opts.atol >= 0 || throw(ArgumentError("atol"))
-    opts.rtol >= 0 || throw(ArgumentError("rtol"))
+    opts.atol >= 0. || throw(ArgumentError("atol"))
+    opts.rtol >= 0. || throw(ArgumentError("rtol"))
     opts.leafsize >= 1 || throw(ArgumentError("leafsize"))
     opts.stepsize >= 1 || throw(ArgumentError("stepsize"))
     opts.noversampling >= 1 || throw(ArgumentError("noversampling"))
