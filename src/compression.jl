@@ -266,7 +266,7 @@ function randcompress_adaptive(A::AbstractMatOrLinOp{T}, rcl::ClusterTree, ccl::
     #@infiltrate
     nrm = sqrt(1/bs)*norm(Scol_test)
     nrm_est = sqrt(1/bs)*norm(Scol_test - hssA*Ωcol_test)
-    failed = nrm_est > opts.atol || nrm_est > opts.rtol*nrm
+    failed = nrm_est > opts.atol && nrm_est > opts.rtol*nrm
 
     if failed
       opts.verbose || println("Enlarging sampling space to ", k+bs)

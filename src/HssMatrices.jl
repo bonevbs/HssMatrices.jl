@@ -10,6 +10,7 @@ module HssMatrices
   using SparseArrays # introduce custom constructors from sparse matrices
   using AbstractTrees
   using Plots # in the future, move to RecipesBase instead
+  using LowRankApprox # optional for now , to replace prrqr with an efficient implementation
 
   # load BLAS/LAPACK routines only used within the library# load efficient BLAS and LAPACK routines for factorizations
   import LinearAlgebra.LAPACK.geqlf!
@@ -26,14 +27,6 @@ module HssMatrices
   import Base./, Base.convert, Base.^, Base.getindex, Base.adjoint
   import LinearAlgebra.ldiv!, LinearAlgebra.mul!
 
-  # change this rtol, atol and modify the code to check for the one that is bigger
-  # const atol = 0
-  # const rtol = 1e-9
-  #const tol = 1e-9 
-  #const reltol = true
-  #const leafsize = 64
-
-  #export tol, reltol, leafsize
   # HssMatrices.jl
   export HssOptions
   # hssmatrix.jl
@@ -73,7 +66,7 @@ module HssMatrices
   # set default values
   function HssOptions(::Type{T}; args...) where T
     opts = HssOptions(
-      1e6,                # atol # by default turned off
+      1e-9,               # atol # by default turned off
       1e-9,               # rtol
       64,                 # leafsize
       10,                 # noversampling
@@ -100,8 +93,8 @@ module HssMatrices
   end
   
   function chkopts!(opts::HssOptions)
-    opts.atol > 0 || throw(ArgumentError("atol"))
-    opts.rtol > 0 || throw(ArgumentError("rtol"))
+    opts.atol >= 0 || throw(ArgumentError("atol"))
+    opts.rtol >= 0 || throw(ArgumentError("rtol"))
     opts.leafsize >= 1 || throw(ArgumentError("leafsize"))
     opts.stepsize >= 1 || throw(ArgumentError("stepsize"))
     opts.noversampling >= 1 || throw(ArgumentError("noversampling"))

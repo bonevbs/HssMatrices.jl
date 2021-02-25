@@ -25,7 +25,7 @@ function _ulvreduce!(D::Matrix{T}, U::Matrix{T}, V::Matrix{T}, b::Matrix{T}) whe
   cind = m-k+1:m
   # can't be compressed, exit early
   if k >= m
-    @warn "Encountered a full-rank block with k=$(k). Clustering might not yield best performance!"
+    #@warn "Encountered a full-rank block with k=$(k). Clustering might not yield best performance!"
     u = zeros(m, size(b,2))
     zloc = Matrix{T}(undef, 0, size(b,2))
     lqf = (Matrix{T}(undef, 0, n), Vector{T}(undef, 0))

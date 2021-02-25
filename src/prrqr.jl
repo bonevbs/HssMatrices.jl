@@ -3,21 +3,24 @@
 #
 # Written by Boris Bonev, Nov. 2020
 
-using LinearAlgebra
+using LinearAlgebra, LowRankApprox
 
 # generate convenience access functions that copies A
 prrqr(A::Matrix{T}, atol, rtol) where T = prrqr!(copy(A), atol, rtol)
 prrqr(A::Adjoint, atol, rtol) = prrqr(collect(A), atol, rtol)
 
 # Utility routine to provide access to pivoted rank-revealing qr
-function _compress_block!(A::Matrix{T}, atol, rtol) where T
+function _compress_block!(A::Matrix{T}, atol::Real, rtol::Real) where T
   Q, R, p = prrqr!(copy(A), atol, rtol)
   rk = min(size(R)...)
   return Q[:,1:rk], R[1:rk, invperm(p)]
+  #F = pqrfact(A; atol = atol, rtol = rtol)
+  #rk = min(size(F.R)...)
+  #return F.Q[:,1:rk], F.R[1:rk, invperm(F.p)]
 end
 
 # method for computing the pivoted rank-revealing qr in place
-function prrqr!(A::Matrix{T}, atol, rtol) where T
+function prrqr!(A::Matrix{T}, atol::Real, rtol::Real) where T
   m, n = size(A)
 
   vnrm = sum(abs2, A, dims=1)
@@ -37,7 +40,11 @@ function prrqr!(A::Matrix{T}, atol, rtol) where T
     vnrm[j] = mx
 
     # figure out whether to stop the rrqr
-    if sum(vnrm[j:end]) < sum(vnrm[1:j-1])*rtol^2 && sum(vnrm[j:end]) < atol^2
+    nrm2 = sum(vnrm[1:j-1])
+    res2 = sum(vnrm[j:end])
+    tol2 = min(atol^2, nrm2*rtol^2)
+    if ( res2 <= tol2 ) || ( nrm2 == res2 == 0 )
+    #if ( sum(vnrm[j:end]) <= sum(vnrm[1:j-1])*rtol^2 ) && ( sum(vnrm[j:end]) <= atol^2 )
       A = A[1:jj,:]
       break
     end
