@@ -40,7 +40,7 @@ end
 # leaf node function for compression
 function _compress!(A::Matrix{T}, Brow::Matrix{T}, Bcol::Matrix{T}, rows::UnitRange{Int}, cols::UnitRange{Int}, atol, rtol) where T
   U, Brow = _compress_block!(Brow, atol, rtol)
-  V, Bcol = _compress_block!(copy(Bcol'), atol, rtol) #TODO: write code that is better at dealing with Julia's lazy transpose
+  V, Bcol = _compress_block!(Bcol', atol, rtol) #TODO: write code that is better at dealing with Julia's lazy transpose
   return HssLeaf(A[rows, cols], U, V), Brow, copy(Bcol')
 end
 

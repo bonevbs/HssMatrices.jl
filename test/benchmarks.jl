@@ -27,7 +27,7 @@ println("Benchmarking randomized compression...")
 
 println("Benchmarking re-compression...")
 hssB = copy(hssA)
-@btime hssA = recompress!(hssB; rtol=1e-3);
+@btime hssA = recompress!(hssB; atol=1e-3, rtol=1e-3);
 
 # time matvec
 println("Benchmarking matvec...")
@@ -41,5 +41,5 @@ b = randn(size(A,2), 10);
 
 # time hssldivide
 println("Benchmarking hssldivide...")
-hssX = compress(1.0*Matrix(I, n, n), ccl, ccl, atol=1e9, rtol=1e9) # this should probably be one constructor
+hssX = compress(1.0*Matrix(I, n, n), ccl, ccl, atol=0., rtol=0.) # this should probably be one constructor
 @btime hssC = ldiv!(copy(hssA), hssX)
