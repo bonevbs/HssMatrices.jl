@@ -12,12 +12,13 @@ prrqr!(A::Adjoint, atol, rtol) = prrqr!(collect(A), atol, rtol)
 
 # Utility routine to provide access to pivoted rank-revealing qr
 function _compress_block!(A::AbstractMatrix{T}, atol::Float64, rtol::Float64) where T
-  Q, R, p = prrqr!(A, atol, rtol)
-  rk = min(size(R)...)
-  return Q[:,1:rk], R[1:rk, invperm(p)]
-  #F = pqrfact(A; atol = atol, rtol = rtol)
-  #rk = min(size(F.R)...)
-  #return F.Q[:,1:rk], F.R[1:rk, invperm(F.p)]
+  #Q, R, p = prrqr!(A, atol, rtol)
+  #rk = min(size(R)...)
+  #return Q[:,1:rk], R[1:rk, invperm(p)]
+  # temporarily using prrqr of LowRankApprox.jl
+  F = pqrfact(A; atol = atol, rtol = rtol)
+  rk = min(size(F.R)...)
+  return F.Q[:,1:rk], F.R[1:rk, invperm(F.p)]
 end
 
 # method for computing the pivoted rank-revealing qr in place
