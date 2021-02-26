@@ -55,7 +55,7 @@ println("abs. error in the solution of Ax = b: ", norm(x-xcor))
 
 # test HSS division
 Id(i,j) = Matrix{Float64}(i.*ones(length(j))' .== ones(length(i)).*j')
-IdOp = LinearOperator{Float64}(n, n, (y,_,x) -> x, (y,_,x) -> x, (i,j) -> Id(i,j), nothing)
+IdOp = LinearMap{Float64}(n, n, (y,_,x) -> x, (y,_,x) -> x, (i,j) -> Id(i,j), nothing)
 hssI = randcompress(IdOp, ccl, ccl, 0)
 hssC = ldiv!(copy(hssA), hssI)
 norm(full(hssC) - inv(A))/norm(inv(A))

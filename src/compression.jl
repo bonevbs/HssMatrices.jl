@@ -242,7 +242,7 @@ function randcompress_adaptive(A::AbstractMatOrLinOp{T}, rcl::ClusterTree, ccl::
   m, n = size(A)
   maxrank = n
   compatible(rcl, ccl) || throw(ArgumentError("row and column clusters are not compatible"))
-  if typeof(A) <: AbstractMatrix A = LinOp(A) end
+  if typeof(A) <: AbstractMatrix A = LinMap(A) end
   hssA = _extract_diagonal(A, rcl, ccl)
 
   # compute initial sampling
@@ -372,7 +372,7 @@ end
 
 # interpolative decomposition
 # still gotta figure out which qr decomposition to use
-function _interpolate(A::Matrix{T}, atol::Float64, rtol::Float64) where T
+function _interpolate(A::AbstractMatrix{T}, atol::Float64, rtol::Float64) where T
   size(A,2) == 0 && return Matrix{T}(undef, 0,0), []
   #_, R, p = prrqr(A, tol; reltol=reltol)
   #rk = min(size(R)...)

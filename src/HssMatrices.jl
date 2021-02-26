@@ -37,8 +37,8 @@ module HssMatrices
   export BinaryNode, leftchild, rightchild, isleaf, isbranch, depth
   # clustertree.jl
   export bisection_cluster, cluster
-  # linearoperator.jl
-  export AbstractLinearOperator, AbstractMatOrLinOp, LinearOperator, HermitianLinearOperator
+  # linearmap.jl
+  export LinearMap, HermitianLinearMap
   # compression.jl
   export compress, randcompress, randcompress_adaptive, recompress!
   # generators.jl  
@@ -104,7 +104,7 @@ module HssMatrices
   include("prrqr.jl")
   include("binarytree.jl")
   include("clustertree.jl")
-  include("linearoperator.jl")
+  include("linearmap.jl")
   include("compression.jl")
   include("generators.jl")
   include("matmul.jl")
