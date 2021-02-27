@@ -4,13 +4,6 @@ using LinearAlgebra
 using AbstractTrees
 using Plots
 
-# test prrqr
-# U = randn(100,3);
-# V = randn(50,3);
-# A = U * V';
-# Q,R,p = HssMatrices.prrqr(A,1e-3);
-# norm(A[:,p] - Q[:,1:size(R,1)]*R)
-
 # generate Cauchy matrix
 K(x,y) = (x-y) != 0 ? 1/(x-y) : 1.
 A = [ K(x,y) for x=-1:0.001:1, y=-1:0.001:1];
@@ -23,7 +16,6 @@ ccl = bisection_cluster(1:n, lsz)
 
 # test compression
 hssA = compress(A, rcl, ccl);
-@time hssA = compress(A, rcl, ccl); 
 println("rel. approximation error with direct compression: ", norm(A - full(hssA))/norm(A))
 println("abs. approximation error with direct compression: ", norm(A - full(hssA)))
 println("hss-rank with direct compression: ", hssrank(hssA))
@@ -48,17 +40,26 @@ println("abs. error in the matrix-vector products: ", norm(A*x - hssA*x))
 # test the ULV based solver
 b = randn(size(A,2), 5);
 x = ulvfactsolve(hssA, b);
-@time x = ulvfactsolve(hssA, b);
 xcor = A\b;
 println("rel. error in the solution of Ax = b: ", norm(x-xcor)/norm(xcor))
 println("abs. error in the solution of Ax = b: ", norm(x-xcor))
 
-# test HSS division
+# test left HSS division
 Id(i,j) = Matrix{Float64}(i.*ones(length(j))' .== ones(length(i)).*j')
 IdOp = LinearMap{Float64}(n, n, (y,_,x) -> x, (y,_,x) -> x, (i,j) -> Id(i,j), nothing)
 hssI = randcompress(IdOp, ccl, ccl, 0)
-hssC = ldiv!(copy(hssA), hssI)
-norm(full(hssC) - inv(A))/norm(inv(A))
+hssC = ldiv!(hssA, hssI)
+println("rel. error in the solution of AX = I: ", norm(full(hssC) - inv(A)) / norm(inv(A)) )
+println("abs. error in the solution of AX = I: ", norm(full(hssC) - inv(A)) )
+
+# test left HSS division
+Id(i,j) = Matrix{Float64}(i.*ones(length(j))' .== ones(length(i)).*j')
+IdOp = LinearMap{Float64}(n, n, (y,_,x) -> x, (y,_,x) -> x, (i,j) -> Id(i,j), nothing)
+hssI = randcompress(IdOp, ccl, ccl, 0)
+hssC = rdiv!(hssI, hssA)
+println("rel. error in the solution of XA = I: ", norm(full(hssC) - inv(A)) / norm(inv(A)) )
+println("abs. error in the solution of XA = I: ", norm(full(hssC) - inv(A)) )
+
 
 
 # # test computation of generators

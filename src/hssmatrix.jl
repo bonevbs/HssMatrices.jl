@@ -3,7 +3,7 @@
 
 ## new datastructure which splits the old one into two parts to avoid unnecessary allocations
 # definition of leaf nodes
-mutable struct HssLeaf{T<:Number} #<: AbstractMatrix{T}
+mutable struct HssLeaf{T<:Number} <: AbstractMatrix{T}
   D ::Matrix{T}
   U ::Matrix{T}
   V ::Matrix{T}
@@ -21,7 +21,7 @@ mutable struct HssLeaf{T<:Number} #<: AbstractMatrix{T}
 end
 
 # definition of branch nodes
-mutable struct HssNode{T<:Number} #<: AbstractMatrix{T}
+mutable struct HssNode{T<:Number} <: AbstractMatrix{T}
   A11 ::Union{HssNode{T}, HssLeaf{T}}
   A22 ::Union{HssNode{T}, HssLeaf{T}}
   B12 ::Matrix{T}
@@ -58,9 +58,7 @@ const HssMatrix{T} = Union{HssLeaf{T}, HssNode{T}}
 @inline isleaf(hssA::HssMatrix) = typeof(hssA) <: HssLeaf # check whether making this inline speeds up things ?
 @inline isbranch(hssA::HssMatrix) = typeof(hssA) <: HssNode
 
-## Base overrides
-eltype(::Type{HssLeaf{T}}) where T = T
-eltype(::Type{HssNode{T}}) where T = T
+@inline ishss(A::AbstractMatrix) = typeof(A) <: HssMatrix
 
 size(hssA::HssLeaf) = size(hssA.D)
 size(hssA::HssNode) = hssA.sz1 .+ hssA.sz2
@@ -71,6 +69,36 @@ show(io::IO, hssA::HssNode) = print(io, "$(size(hssA,1))x$(size(hssA,2)) HssNode
 
 copy(hssA::HssLeaf) = HssLeaf(copy(hssA.D), copy(hssA.U), copy(hssA.V))
 copy(hssA::HssNode) = HssNode(copy(hssA.A11), copy(hssA.A22), copy(hssA.B12), copy(hssA.B21), copy(hssA.R1), copy(hssA.W1), copy(hssA.R2), copy(hssA.W2))
+
+# implement sorted access to entries via recursion
+# in the long run we might want to return an HssMatrix when we access via getindex
+getindex(hssA::HssMatrix, i::Int, j::Int) = getindex(hssA, [i], [j])[1]
+getindex(hssA::HssMatrix, i::Int, j::AbstractRange) = getindex(hssA, [i], j)[:]
+getindex(hssA::HssMatrix, i::AbstractRange, j::Int) = getindex(hssA, i, [j])[:]
+getindex(hssA::HssMatrix, i::AbstractRange, j::AbstractRange) = getindex(hssA, collect(i), collect(j))
+getindex(hssA::HssMatrix, ::Colon, ::Colon) = full(hssA)
+getindex(hssA::HssMatrix, i, ::Colon) = getindex(hssA, i, 1:size(hssA,2))
+getindex(hssA::HssMatrix, ::Colon, j) = getindex(hssA, 1:size(hssA,1), j)
+function getindex(hssA::HssMatrix{T}, i::Vector{Int}, j::Vector{Int}) where T
+  m, n  = size(hssA)
+  permi = sortperm(i); permj = sortperm(j)
+  # check for out of bounds
+  1 ≤ i[permi[1]] ≤ m || throw(BoundsError("Attempted to access $(size(A)) array at index i=$(i[permi[1]])"))
+  1 ≤ i[permi[end]] ≤ m || throw(BoundsError("Attempted to access $(size(A)) array at index i=$(i[permi[end]])"))
+  1 ≤ j[permj[1]] ≤ n || throw(BoundsError("Attempted to access $(size(A)) array at index j=$(i[permj[1]])"))
+  1 ≤ j[permj[end]] ≤ n || throw(BoundsError("Attempted to access $(size(A)) array at index j=$(i[permj[end]])"))
+  A = Matrix{T}(undef, length(i), length(j))
+  A[invperm(permi), invperm(permj)] .= full(_getidx(hssA, i[permi], j[permj]))
+end
+_getidx(hssA::HssLeaf, i::Vector{Int}, j::Vector{Int}) = HssLeaf(hssA.D[i,j], hssA.U[i,:], hssA.V[j,:])
+function _getidx(hssA::HssNode, i::Vector{Int}, j::Vector{Int})
+  m1, n1 = hssA.sz1
+  i1 = i[i .<= m1]; j1 = j[j .<= n1]
+  i2 = i[i .> m1] .- m1; j2 = j[j .> n1] .- n1
+  A11 = _getidx(hssA.A11, i1, j1)
+  A22 = _getidx(hssA.A22, i2, j2)
+  return HssNode(A11, A22, hssA.B12, hssA.B21, hssA.R1, hssA.W1, hssA.R2, hssA.W2)
+end
 
 # maybe replace that later wit ha lazy adjjoint, which swaps cols and rows when called
 # TODO: create AbstractHssMatrix type to contain the adjoint as well
@@ -114,16 +142,11 @@ for op in (:+,:-)
   end
 end
 
-# # getindex routines
-# # _getindex routines assume sorted arrays
-# _getindex(hssA::HssLeaf, i, j) = hssA.D[i, j], U[i, :], V[j, :]
-# function _getindex(hssA::HssNode, i, j)
-
-# end
-
 # matrix division involving HSS matrices
 \(hssA::HssMatrix, B::Matrix) = ulvfactsolve(hssA, B)
 \(hssA::HssMatrix, hssB::HssMatrix) = ldiv!(hssA, copy(hssB))
+/(A::Matrix, hssB::HssMatrix) = ulvfactsolve(hssB', collect(A'))
+/(hssA::HssMatrix, hssB::HssMatrix) = rdiv!(hssB, copy(hssA))
 
 # Scalar multiplication
 *(a::Number, hssA::HssLeaf) = HssLeaf(a*hssA.D, hssA.U, hssA.V)
@@ -179,3 +202,15 @@ function prune_leaves!(hssA::HssNode)
     return hssA
   end
 end
+
+
+# function Base.show(io::IOContext, hssA::HssMatrix)
+#   if max(size(S)...) < 16 && !(get(io, :compact, false)::Bool)
+#       ioc = IOContext(io, :compact => true)
+#       println(ioc)
+#       Base.print_matrix(ioc, hssA)
+#       return
+#   end
+#   println(io)
+#   _show_with_braille_patterns(io, S)
+# end

@@ -22,15 +22,13 @@ module HssMatrices
   import LinearAlgebra.ishermitian
 
   # using InvertedIndices, DataStructures
-  import Base.+, Base.-, Base.*, Base.\, Base.Matrix, Base.copy, Base.size, Base.show, Base.eltype
-  # more Base overrides - these still need to be added to HSS matrices!
-  import Base./, Base.convert, Base.^, Base.getindex, Base.adjoint
-  import LinearAlgebra.ldiv!, LinearAlgebra.mul!
+  import Base: +, -, *, \, /, ^, copy, size, getindex, adjoint, convert, Matrix
+  import LinearAlgebra: ldiv!, rdiv!, mul!
 
   # HssMatrices.jl
   export HssOptions
   # hssmatrix.jl
-  export HssLeaf, HssNode, HssMatrix, isleaf, isbranch, hssrank, full, checkdims, prune_leaves!
+  export HssLeaf, HssNode, HssMatrix, isleaf, isbranch, ishss, hssrank, full, checkdims, prune_leaves!
   # prrqr.jl
   export prrqr, prrqr!
   # binarytree.jl
@@ -46,8 +44,8 @@ module HssMatrices
   # matmul.jl
   # ulvfactor.jl
   export ulvfactsolve
-  # hssdivide.jl
-  export ldiv!, _ulvfactor_leaves!
+  # ulvdivide.jl
+  export ldiv!, rdiv!, _ulvfactor_leaves!
   # constructors.jl
   export lowrank2hss
   # visualization.jl
@@ -109,7 +107,7 @@ module HssMatrices
   include("generators.jl")
   include("matmul.jl")
   include("ulvfactor.jl")
-  include("hssdivide.jl")
+  include("ulvdivide.jl")
   include("constructors.jl")
   include("visualization.jl")
 end

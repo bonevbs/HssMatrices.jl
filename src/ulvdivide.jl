@@ -12,15 +12,17 @@
 ## ULV divide algorithm to apply the inverse to another HSS matrix
 # temporary name for function that actually just computes the ULV factorization
 # the cluster structure in hssA and hssB should be compatible w/e that means...
-function ldiv!(hssA::HssLeaf{T}, hssB::HssMatrix{T}) where T
+
+# compute hssA \ hssB in HSS format, overwriting hssB
+ldiv!(hssA::HssMatrix, hssB::HssMatrix) = _ldiv!(copy(hssA), hssB)
+function _ldiv!(hssA::HssLeaf{T}, hssB::HssMatrix{T}) where T
   D, U, V = _full(hssB)
   D = full(hssA) \ D
   return HssLeaf(D, U, V)
 end
-
-function ldiv!(hssA::HssNode{T}, hssB::HssNode{T}) where T
+function _ldiv!(hssA::HssNode{T}, hssB::HssNode{T}) where T
   # bottom-up stage of the ULV solution algorithm
-  hssL, QU, QL, QV, mk, nk, ktree  = _ulvfactor_leaves!(copy(hssA), 0)
+  hssL, QU, QL, QV, mk, nk, ktree  = _ulvfactor_leaves!(hssA, 0)
   hssB = _utransforms!(hssB, QU)
   hssQB = _extract_crows(hssB, nk)
   hssY0 = _ltransforms!(hssB, QL)
@@ -35,7 +37,7 @@ function ldiv!(hssA::HssNode{T}, hssB::HssNode{T}) where T
   hssL = prune_leaves!(hssL)
 
   # recursively call mldivide
-  hssY1 = ldiv!(hssL, hssQB)
+  hssY1 = _ldiv!(hssL, hssQB)
 
   # do the unpacking
   hssB = _unpackadd_rows!(hssY0, hssY1, ktree)
@@ -43,6 +45,13 @@ function ldiv!(hssA::HssNode{T}, hssB::HssNode{T}) where T
   hssB = recompress!(hssB)
 end
 
+# compute hssA / hssB in HSS format, overwriting hssA
+# (this is the lazy implementation and it's efficiency depends on how well the adjoint is implemented)
+function rdiv!(hssA::HssMatrix, hssB::HssMatrix)
+  hssA = adjoint(_ldiv!(adjoint(hssB), adjoint(hssA)))
+end
+
+## The core routines which make up the division follow here
 # core routine to reduce the rows and triangularize the diagonal block via QR/LQ decompositions
 function _ulvreduce!(D::Matrix{T}, U::Matrix{T}, V::Matrix{T}) where T
   T <: Complex ? adj = 'C' : adj = 'T'
@@ -119,6 +128,12 @@ function _vtransforms!(hssA::HssLeaf, Q::BinaryNode)
   eltype(hssA) <: Complex ? adj = 'C' : adj = 'T'
   hssA.D = ormlq!('L', adj, Q.data..., hssA.D)
   hssA.U = ormlq!('L', adj, Q.data..., hssA.U)
+  return hssA
+end
+function _rapplyv!(hssA::HssLeaf, Q::BinaryNode)
+  eltype(hssA) <: Complex ? adj = 'C' : adj = 'T'
+  hssA.D = ormlq!('R', adj, Q.data..., hssA.D)
+  hssA.V = ormlq!('R', adj, Q.data..., hssA.U)
   return hssA
 end
 
