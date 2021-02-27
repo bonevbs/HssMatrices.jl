@@ -269,7 +269,7 @@ function randcompress_adaptive(A::AbstractMatOrLinOp{T}, rcl::ClusterTree, ccl::
     failed = nrm_est > opts.atol && nrm_est > opts.rtol*nrm
 
     if failed
-      opts.verbose || println("Enlarging sampling space to ", k+bs)
+      opts.verbose && println("Enlarging sampling space to ", k+bs)
       Ωcol = [Ωcol Ωcol_test]
       Ωrow = [Ωrow Ωrow_test]
       Scol = [Scol Scol_test]

@@ -62,16 +62,17 @@ module HssMatrices
   end
   
   # set default values
+  atol = 1e-9
+  rtol = 1e-9
+  leafsize = 64
+  noversampling = 10
+  stepsize = 20
+  recompress = true
+  verbose = false
+
+  # struct to pass around with options
   function HssOptions(::Type{T}; args...) where T
-    opts = HssOptions(
-      1e-9,               # atol # by default turned off
-      1e-9,               # rtol
-      64,                 # leafsize
-      10,                 # noversampling
-      20,                 # stepsize
-      true,               # recompress
-      true,               # verbose
-    )
+    opts = HssOptions(atol, rtol, leafsize, noversampling, stepsize, recompress, verbose)
     for (key, value) in args
       setfield!(opts, key, value)
     end
@@ -91,11 +92,24 @@ module HssMatrices
   end
   
   function chkopts!(opts::HssOptions)
-    opts.atol >= 0. || throw(ArgumentError("atol"))
-    opts.rtol >= 0. || throw(ArgumentError("rtol"))
-    opts.leafsize >= 1 || throw(ArgumentError("leafsize"))
-    opts.stepsize >= 1 || throw(ArgumentError("stepsize"))
-    opts.noversampling >= 1 || throw(ArgumentError("noversampling"))
+    opts.atol ≥ 0. || throw(ArgumentError("atol"))
+    opts.rtol ≥ 0. || throw(ArgumentError("rtol"))
+    opts.leafsize ≥ 1 || throw(ArgumentError("leafsize"))
+    opts.stepsize ≥ 1 || throw(ArgumentError("stepsize"))
+    opts.noversampling ≥ 1 || throw(ArgumentError("noversampling"))
+  end
+
+  function setopts(opts::HssOptions=HssOptions(Float64); args...)
+    opts = copy(opts; args...)
+    chkopts!(opts)
+    global atol = opts.atol
+    global rtol = opts.rtol
+    global leafsize = opts.leafsize
+    global noversampling = opts.noversampling
+    global stepsize = opts.stepsize
+    global recompress = opts.recompress
+    global verbose = opts.verbose
+    return opts
   end
 
   include("hssmatrix.jl")

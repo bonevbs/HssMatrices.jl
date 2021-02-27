@@ -10,9 +10,9 @@ A = [ K(x,y) for x=-1:0.001:1, y=-1:0.001:1];
 
 # test the simple implementation of cluster trees
 m, n = size(A)
-lsz = 64;
-rcl = bisection_cluster(1:m, lsz)
-ccl = bisection_cluster(1:n, lsz)
+HssMatrices.setopts(leafsize=64)
+rcl = bisection_cluster(1:m)
+ccl = bisection_cluster(1:n)
 
 # test compression
 hssA = compress(A, rcl, ccl);

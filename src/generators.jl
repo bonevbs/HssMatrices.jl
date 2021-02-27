@@ -21,12 +21,14 @@ function generators(hssA::HssMatrix{T}, ul::Tuple{S,S}) where {T, S <: Integer}
 end
 
 # recursive function to compute the generators corresponding to this subblock
-generators(hssA::HssLeaf{T}) where T = hssA.U, hssA.V
-function generators(hssA::HssNode{T}) where T
+generators(hssA::HssLeaf) = hssA.U, hssA.V
+function generators(hssA::HssNode)
   U1, V1 = generators(hssA.A11)
   U2, V2 = generators(hssA.A22)
   return [U1*hssA.R1; U2*hssA.R2], [V1*hssA.W1; V2*hssA.W2]
 end
+
+#offdiag(hssA::HssNode, ::Val{:upper}) = generators(hssA.A11)[1]*hssA.B12*generators(hssA.A11)[2]'
 
 ## orthogonalize generators
 function orthonormalize_generators!(hssA::HssLeaf{T}) where T
