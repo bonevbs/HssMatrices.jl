@@ -11,12 +11,18 @@ const ClusterTree = BinaryNode{UnitRange{Int}}
 
 ## Functionality for cluster trees
 # Create a simple cluster tree based on 
-bisection_cluster(n::Int, opts::HssOptions=HssOptions(); args... ) = bisection_cluster(1:n, opts)
+bisection_cluster(n::Int, opts::HssOptions=HssOptions(); args...) = bisection_cluster(1:n, opts)
 function bisection_cluster(range::UnitRange{Int}, opts::HssOptions=HssOptions(); args...)
   opts = copy(opts; args...)
   chkopts!(opts)
   length(range) ≤ 0 && throw(ArgumentError("Index range must be larger or equal to 0"))
   _bisection_cluster(range, opts.leafsize)
+end
+function bisection_cluster(n::Tuple{Int,Int}, opts::HssOptions=HssOptions(); args...)
+  opts = copy(opts; args...)
+  chkopts!(opts)
+  1 ≤ n[1] ≤ n[2] || throw(ArgumentError("Indices must be ordered and bigger than 1"))
+  ClusterTree(1:n[2], _bisection_cluster(1:n[1], opts.leafsize), _bisection_cluster(n[1]+1:n[2], opts.leafsize))
 end
 function _bisection_cluster(range::UnitRange{Int}, leafsize::Int)
   node = ClusterTree(range)
@@ -39,5 +45,3 @@ function _cluster(hssA::HssNode, co::Int, ro::Int)
   ccl2, rcl2 = _cluster(hssA.A22, ccl1.data[end], rcl1.data[end])
   return ClusterTree(co:ccl2.data[end], ccl1, ccl2), ClusterTree(ro:rcl2.data[end], rcl1, rcl2)
 end
-
-## TODO: write function to check cluster equality

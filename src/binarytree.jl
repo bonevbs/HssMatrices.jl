@@ -57,6 +57,9 @@ function compatible(node1::BinaryNode, node2::BinaryNode)
   return true
 end
 
+==(node1::BinaryNode, node2::BinaryNode) = (node1.data == node2.data) && (node1.left == node2.left) && (node1.right == node2.right)
+!=(node1::BinaryNode, node2::BinaryNode) = (node1.data != node2.data) || (node1.left != node2.left) || (node1.right != node2.right)
+
 ## Optional enhancements
 # These next two definitions allow inference of the item type in iteration.
 Base.eltype(::Type{BinaryNode{T}}) where T = T

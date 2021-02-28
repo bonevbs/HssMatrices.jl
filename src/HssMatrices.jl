@@ -22,7 +22,7 @@ module HssMatrices
   import LinearAlgebra.ishermitian
 
   # using InvertedIndices, DataStructures
-  import Base: +, -, *, \, /, ^, copy, size, getindex, adjoint, convert, Matrix
+  import Base: +, -, *, \, /, ^, ==, !=, copy, size, getindex, adjoint, convert, Matrix
   import LinearAlgebra: ldiv!, rdiv!, mul!
 
   # HssMatrices.jl
