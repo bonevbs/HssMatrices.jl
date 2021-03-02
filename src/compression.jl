@@ -285,7 +285,7 @@ end
 function _extract_diagonal(A::AbstractMatOrLinOp{T}, rcl::ClusterTree, ccl::ClusterTree) where T
   if isleaf(rcl) # only check row cluster as we have already checked cluster equality
     D = A[rcl.data, ccl.data]
-    return HssLeaf(D)
+    return HssLeaf(Matrix(D))
   elseif isbranch(rcl)
     A11 = _extract_diagonal(A, rcl.left, ccl.left)
     A22 = _extract_diagonal(A, rcl.right, ccl.right)

@@ -33,15 +33,3 @@ function _bisection_cluster(range::UnitRange{Int}, leafsize::Int)
   end
   return node
 end
-
-## write function that extracts the clustwer tree from an HSS matrix
-cluster(hssA) = _cluster(hssA, 0, 0)
-function _cluster(hssA::HssLeaf, co::Int, ro::Int)
-  m, n = size(hssA)
-  return ClusterTree(co.+(1:m)), ClusterTree(ro.+(1:n))
-end
-function _cluster(hssA::HssNode, co::Int, ro::Int)
-  ccl1, rcl1 = _cluster(hssA.A11, co, ro)
-  ccl2, rcl2 = _cluster(hssA.A22, ccl1.data[end], rcl1.data[end])
-  return ClusterTree(co:ccl2.data[end], ccl1, ccl2), ClusterTree(ro:rcl2.data[end], rcl1, rcl2)
-end

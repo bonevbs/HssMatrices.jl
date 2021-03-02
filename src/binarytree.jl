@@ -19,6 +19,7 @@ BinaryNode(data) = BinaryNode{typeof(data)}(data)
 BinaryNode(left::BinaryNode{T}, right::BinaryNode{T}) where T = BinaryNode{T}(left, right)
 BinaryNode(data, left::BinaryNode, right::BinaryNode) = BinaryNode{typeof(data)}(data, left, right)
 
+# some utility functions
 isleaf(node::BinaryNode) = isnothing(node.left) && isnothing(node.right)
 isbranch(node::BinaryNode) = !isnothing(node.left) && !isnothing(node.right)
 
@@ -34,6 +35,20 @@ function _depth(node::BinaryNode, level)
     end
   else
     return _depth(node.right, level+1)
+  end
+end
+
+function nleaves(node::BinaryNode)
+  if isleaf(node)
+    return 1
+  elseif !isnothing(node.left)
+    if !isnothing(node.right)
+      return nleaves(node.left) + nleaves(node.right)
+    else
+      return nleaves(node.left)
+    end
+  else
+    return nleaves(node.right)
   end
 end
 

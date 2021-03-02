@@ -53,6 +53,23 @@ end
 #HssNode(A11::Union{HssLeaf, HssNode}, A22::Union{HssLeaf, HssNode}, B12::Matrix, B21::Matrix, ::Nothing, ::Nothing, ::Nothing, ::Nothing) = HssNode(A11, A22, B12, B21)
 # TODO: add constructors that use compression methods
 
+# custom constructors which are calling the compression algorithms
+function hss(A::AbstractMatrix, opts::HssOptions=HssOptions(Float64); args...)
+  opts = copy(opts; args...)
+  chkopts!(opts)
+  hss(A, bisection_cluster(size(A,1), leafsize=opts.leafsize), bisection_cluster(size(A,2), leafsize=opts.leafsize); args...)
+end
+hss(A::Matrix, rcl::ClusterTree, ccl::ClusterTree; args...) = compress(A, rcl, ccl, args...)
+function hss(A::AbstractSparseMatrix, rcl::ClusterTree, ccl::ClusterTree; args...)
+  m, n = size(A)
+  # estimate rank by assuming that the non-zero entries are clustered on the diagonal
+  nl = nleaves(rcl)
+  m0 = Int(ceil(m/nl))
+  n0 = Int(ceil(n/nl))
+  kest = max(nnz(A) - nl*m0*n0,0)
+  randcompress_adaptive(A, rcl, ccl; kest = kest, args...)
+end
+
 # convenience alias (maybe unnecessary)
 const HssMatrix{T} = Union{HssLeaf{T}, HssNode{T}}
 @inline isleaf(hssA::HssMatrix) = typeof(hssA) <: HssLeaf # check whether making this inline speeds up things ?
@@ -201,6 +218,18 @@ function prune_leaves!(hssA::HssNode)
     hssA.A22 = prune_leaves!(hssA.A22)
     return hssA
   end
+end
+
+## write function that extracts the clustwer tree from an HSS matrix
+cluster(hssA) = _cluster(hssA, 0, 0)
+function _cluster(hssA::HssLeaf, co::Int, ro::Int)
+  m, n = size(hssA)
+  return ClusterTree(co.+(1:m)), ClusterTree(ro.+(1:n))
+end
+function _cluster(hssA::HssNode, co::Int, ro::Int)
+  ccl1, rcl1 = _cluster(hssA.A11, co, ro)
+  ccl2, rcl2 = _cluster(hssA.A22, ccl1.data[end], rcl1.data[end])
+  return ClusterTree(co:ccl2.data[end], ccl1, ccl2), ClusterTree(ro:rcl2.data[end], rcl1, rcl2)
 end
 
 
