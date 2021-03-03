@@ -301,8 +301,10 @@ end
 function _randcompress!(hssA::HssLeaf, A, Scol::Matrix, Srow::Matrix, Ωcol::Matrix, Ωrow::Matrix, ro::Int, co::Int, atol::Float64, rtol::Float64; rootnode=false)
   Scol = Scol - hssA.D * Ωcol
   Srow = Srow - hssA.D' * Ωrow
-  # take care of column-space
 
+  if rootnode return hssA end
+
+  # take care of column-space
   Xcol, Jcol = _interpolate(Scol', atol, rtol)
   hssA.U = Xcol'
   Scol = Scol[Jcol, :]

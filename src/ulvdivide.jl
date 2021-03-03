@@ -9,12 +9,16 @@
 #
 # Written by Boris Bonev, Feb. 2021
 
+# function for acess that imitate the behavior in LinearAlgebra.jl
+ldiv!(hssA::HssMatrix, hssB::HssMatrix) = _ldiv!(copy(hssA), hssB)
+# lazy implementation of rdiv!
+function rdiv!(hssA::HssMatrix, hssB::HssMatrix)
+  hssA = adjoint(_ldiv!(adjoint(hssB), adjoint(hssA)))
+end
+
 ## ULV divide algorithm to apply the inverse to another HSS matrix
 # temporary name for function that actually just computes the ULV factorization
 # the cluster structure in hssA and hssB should be compatible w/e that means...
-
-# compute hssA \ hssB in HSS format, overwriting hssB
-ldiv!(hssA::HssMatrix, hssB::HssMatrix) = _ldiv!(copy(hssA), hssB)
 function _ldiv!(hssA::HssLeaf{T}, hssB::HssMatrix{T}) where T
   D, U, V = _full(hssB)
   D = full(hssA) \ D
@@ -43,12 +47,6 @@ function _ldiv!(hssA::HssNode{T}, hssB::HssNode{T}) where T
   hssB = _unpackadd_rows!(hssY0, hssY1, ktree)
   hssB = _vtransforms!(hssB, QV)
   hssB = recompress!(hssB)
-end
-
-# compute hssA / hssB in HSS format, overwriting hssA
-# (this is the lazy implementation and it's efficiency depends on how well the adjoint is implemented)
-function rdiv!(hssA::HssMatrix, hssB::HssMatrix)
-  hssA = adjoint(_ldiv!(adjoint(hssB), adjoint(hssA)))
 end
 
 ## The core routines which make up the division follow here

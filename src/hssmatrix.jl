@@ -53,6 +53,9 @@ end
 #HssNode(A11::Union{HssLeaf, HssNode}, A22::Union{HssLeaf, HssNode}, B12::Matrix, B21::Matrix, ::Nothing, ::Nothing, ::Nothing, ::Nothing) = HssNode(A11, A22, B12, B21)
 # TODO: add constructors that use compression methods
 
+# convenience alias (maybe unnecessary)
+const HssMatrix{T} = Union{HssLeaf{T}, HssNode{T}}
+
 # custom constructors which are calling the compression algorithms
 function hss(A::AbstractMatrix, opts::HssOptions=HssOptions(Float64); args...)
   opts = copy(opts; args...)
@@ -70,8 +73,6 @@ function hss(A::AbstractSparseMatrix, rcl::ClusterTree, ccl::ClusterTree; args..
   randcompress_adaptive(A, rcl, ccl; kest = kest, args...)
 end
 
-# convenience alias (maybe unnecessary)
-const HssMatrix{T} = Union{HssLeaf{T}, HssNode{T}}
 @inline isleaf(hssA::HssMatrix) = typeof(hssA) <: HssLeaf # check whether making this inline speeds up things ?
 @inline isbranch(hssA::HssMatrix) = typeof(hssA) <: HssNode
 
@@ -162,8 +163,8 @@ end
 # matrix division involving HSS matrices
 \(hssA::HssMatrix, B::Matrix) = ulvfactsolve(hssA, B)
 \(hssA::HssMatrix, hssB::HssMatrix) = ldiv!(hssA, copy(hssB))
-/(A::Matrix, hssB::HssMatrix) = ulvfactsolve(hssB', collect(A'))
-/(hssA::HssMatrix, hssB::HssMatrix) = rdiv!(hssB, copy(hssA))
+/(A::Matrix, hssB::HssMatrix) = ulvfactsolve(hssB', collect(A'))'
+/(hssA::HssMatrix, hssB::HssMatrix) = rdiv!(hssB, copy(hssA))'
 
 # Scalar multiplication
 *(a::Number, hssA::HssLeaf) = HssLeaf(a*hssA.D, hssA.U, hssA.V)
