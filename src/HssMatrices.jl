@@ -57,7 +57,6 @@ module HssMatrices
     leafsize::Int
     noversampling::Int
     stepsize::Int
-    recompress::Bool
     verbose::Bool
   end
   
@@ -67,12 +66,11 @@ module HssMatrices
   leafsize = 64
   noversampling = 10
   stepsize = 20
-  recompress = true
   verbose = false
 
   # struct to pass around with options
   function HssOptions(::Type{T}; args...) where T
-    opts = HssOptions(atol, rtol, leafsize, noversampling, stepsize, recompress, verbose)
+    opts = HssOptions(atol, rtol, leafsize, noversampling, stepsize, verbose)
     for (key, value) in args
       setfield!(opts, key, value)
     end

@@ -12,8 +12,8 @@ b = randn(size(A,2), 5);
 m, n = size(A)
 #lsz = 64;
 lsz = 64;
-rcl = bisection_cluster(1:m, lsz)
-ccl = bisection_cluster(1:n, lsz)
+rcl = bisection_cluster(1:m, leafsize=lsz)
+ccl = bisection_cluster(1:n, leafsize=lsz)
 
 hssA = compress(A, rcl, ccl);
 
@@ -28,6 +28,9 @@ println("Benchmarking randomized compression...")
 println("Benchmarking re-compression...")
 hssB = copy(hssA)
 @btime hssA = recompress!(hssB; atol=1e-3, rtol=1e-3);
+
+println("Benchmarking addition...")
+@btime hssC = hssA + hssA
 
 # time matvec
 println("Benchmarking matvec...")
