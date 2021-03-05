@@ -11,35 +11,35 @@ b = randn(size(A,2), 5);
 # test the simple implementation of cluster trees
 m, n = size(A)
 lsz = 64;
-rcl = bisection_cluster(1:m, lsz)
-ccl = bisection_cluster(1:n, lsz)
+rcl = bisection_cluster(1:m, leafsize=lsz)
+ccl = bisection_cluster(1:n, leafsize=lsz)
 
 # test ULV normally
-hssA = hss_compress_direct(A, rcl, ccl);
+hssA = compress(A, rcl, ccl);
 x = ulvfactsolve(hssA, b);
 xcor = A\b;
 println(norm(x-xcor)/norm(xcor))
 
 # test on schewed cluster trees
 lsz = 701;
-rcl = bisection_cluster(1:m, lsz)
-ccl = bisection_cluster(1:n, lsz)
+rcl = bisection_cluster(1:m, leafsize=lsz)
+ccl = bisection_cluster(1:n, leafsize=lsz)
 rcl.left.left.data = 1:700
 rcl.left.right.data = 701:1001
 #print_tree(rcl)
-hssA = hss_compress_direct(A, rcl, ccl);
+hssA = compress(A, rcl, ccl);
 x = ulvfactsolve(hssA, b);
 xcor = A\b;
-println(norm(x-xcor)/norm(xcor))
+println(norm(x-xcor)/norm(xcor))  
 
 # test on schewed cluster trees
 lsz = 701;
-rcl = bisection_cluster(1:m, lsz)
-ccl = bisection_cluster(1:n, lsz)
+rcl = bisection_cluster(1:m, leafsize=lsz)
+ccl = bisection_cluster(1:n, leafsize=lsz)
 ccl.left.left.data = 1:700
 ccl.left.right.data = 701:1001
 #print_tree(ccl)
-hssA = hss_compress_direct(A, rcl, ccl);
+hssA = compress(A, rcl, ccl);
 x = ulvfactsolve(hssA, b);
 xcor = A\b;
 println(norm(x-xcor)/norm(xcor))

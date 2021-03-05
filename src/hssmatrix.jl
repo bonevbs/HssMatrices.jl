@@ -72,6 +72,7 @@ function hss(A::AbstractSparseMatrix, rcl::ClusterTree, ccl::ClusterTree; args..
   kest = max(nnz(A) - nl*m0*n0,0)
   randcompress_adaptive(A, rcl, ccl; kest = kest, args...)
 end
+hss(A::LinearMap, rcl::ClusterTree, ccl::ClusterTree; args...) = randcompress_adaptive(A, rcl, ccl; args...)
 
 @inline isleaf(hssA::HssMatrix) = typeof(hssA) <: HssLeaf # check whether making this inline speeds up things ?
 @inline isbranch(hssA::HssMatrix) = typeof(hssA) <: HssNode
@@ -181,6 +182,14 @@ function gensize(hssA::HssNode)
   (kr = size(hssA.R1,2)) == size(hssA.R2,2) || throw(DimensionMismatch("dimensions of column-translators do not match"))
   (kw = size(hssA.W1,2)) == size(hssA.W2,2) || throw(DimensionMismatch("dimensions of row-translators do not match"))
   return kr, kw
+end
+
+# function that returns alternative HssNode acting as rootnode
+# this makes multiplication etc. safe if we use subblocks of HSS matrices
+root(hssA::HssLeaf) = hssA
+function root(hssA::HssNode)
+  gensize(hssA) == (0, 0) && return hssA
+  return HssNode(hssA.A11, hssA.A22, hssA.B12, hssA.B21)
 end
 
 # return a full matrix

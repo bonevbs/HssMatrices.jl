@@ -27,16 +27,16 @@ module HssMatrices
 
   # HssMatrices.jl
   export HssOptions
-  # hssmatrix.jl
-  export HssLeaf, HssNode, HssMatrix, hss, isleaf, isbranch, ishss, hssrank, full, checkdims, prune_leaves!
-  # prrqr.jl
-  export prrqr, prrqr!
   # binarytree.jl
   export BinaryNode, leftchild, rightchild, isleaf, isbranch, depth, nleaves
   # clustertree.jl
   export bisection_cluster, cluster
   # linearmap.jl
   export LinearMap, HermitianLinearMap
+  # hssmatrix.jl
+  export HssLeaf, HssNode, HssMatrix, hss, isleaf, isbranch, ishss, hssrank, full, checkdims, prune_leaves!
+  # prrqr.jl
+  export prrqr, prrqr!
   # compression.jl
   export compress, randcompress, randcompress_adaptive, recompress!
   # generators.jl  
@@ -114,9 +114,9 @@ module HssMatrices
 
   include("binarytree.jl")
   include("clustertree.jl")
+  include("linearmap.jl")
   include("hssmatrix.jl")
   include("prrqr.jl")
-  include("linearmap.jl")
   include("compression.jl")
   include("generators.jl")
   include("matmul.jl")

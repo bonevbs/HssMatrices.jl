@@ -19,14 +19,16 @@ end
 function _ulvreduce!(D::Matrix{T}, U::Matrix{T}, V::Matrix{T}, b::Matrix{T}) where T
   T <: Complex ? adj = 'C' : adj = 'T'
   m, n = size(D)
-  k = size(U, 2)
+  m == size(U,1) || throw(DimensionMismatch("D and U have different first dimensions"))
+  n == size(V,1) || throw(DimensionMismatch("D and V have different second dimensions"))
+  k = min(size(U, 2), m)
   nk = min(m-k,n)
   ind = 1:m-k
   cind = m-k+1:m
   # can't be compressed, exit early
   if k >= m
-    #@warn "Encountered a full-rank block with k=$(k). Clustering might not yield best performance!"
-    u = zeros(m, size(b,2))
+    # @warn "Encountered a full-rank block with k=$(k). Clustering might not yield best performance!"
+    u = zeros(size(V,2), size(b,2))
     zloc = Matrix{T}(undef, 0, size(b,2))
     lqf = (Matrix{T}(undef, 0, n), Vector{T}(undef, 0))
   else

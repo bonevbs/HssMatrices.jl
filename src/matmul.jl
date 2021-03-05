@@ -19,12 +19,13 @@ end
 *(hssA::HssLeaf, x::Matrix) = hssA.D * x
 function *(hssA::HssNode, x::Matrix)
   if size(hssA,2) != size(x,1); error("dimensions do not match"); end
+  hssA = root(hssA)
   z = _matvecup(hssA, x) # saves intermediate steps of multiplication in a binary tree structure
   b = Matrix{eltype(x)}(undef,0,size(x,2))
   return _matvecdown(hssA, x, z, b)
 end
 
-*(hssA::HssMatrix, x::Vector) = hssA * reshape(x, length(x), 1)
+*(hssA::HssMatrix, x::AbstractVector) = reshape(hssA * reshape(x, length(x), 1), length(x))
 
 ## auxiliary functions for the fast multiplication algorithm
 # post-ordered step of mat-vec
@@ -50,6 +51,7 @@ end
 ## multiplication of two HSS matrices
 *(hssA::HssLeaf, hssB::HssLeaf) = HssLeaf(hssA.D*hssB.D, hssA.U, hssB.V)
 function *(hssA::HssNode, hssB::HssNode)
+  hssA = root(hssA)
   # implememnt cluster equality checks
   #if cluster(hssA,2) != cluster(hssB,1); throw(DimensionMismatch("clusters of hssA and hssB must be matching")) end
   Z = _matmatup(hssA, hssB) # saves intermediate steps of multiplication in a binary tree structure
