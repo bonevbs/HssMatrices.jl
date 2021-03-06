@@ -100,14 +100,16 @@ getindex(hssA::HssMatrix, i, ::Colon) = getindex(hssA, i, 1:size(hssA,2))
 getindex(hssA::HssMatrix, ::Colon, j) = getindex(hssA, 1:size(hssA,1), j)
 function getindex(hssA::HssMatrix{T}, i::Vector{Int}, j::Vector{Int}) where T
   m, n  = size(hssA)
+  A = Matrix{T}(undef, length(i), length(j))
+  if (length(i) == 0 || length(j) == 0) return A end
   permi = sortperm(i); permj = sortperm(j)
   # check for out of bounds
   1 ≤ i[permi[1]] ≤ m || throw(BoundsError("Attempted to access $(size(A)) array at index i=$(i[permi[1]])"))
   1 ≤ i[permi[end]] ≤ m || throw(BoundsError("Attempted to access $(size(A)) array at index i=$(i[permi[end]])"))
   1 ≤ j[permj[1]] ≤ n || throw(BoundsError("Attempted to access $(size(A)) array at index j=$(i[permj[1]])"))
   1 ≤ j[permj[end]] ≤ n || throw(BoundsError("Attempted to access $(size(A)) array at index j=$(i[permj[end]])"))
-  A = Matrix{T}(undef, length(i), length(j))
   A[invperm(permi), invperm(permj)] .= full(_getidx(hssA, i[permi], j[permj]))
+  return A
 end
 _getidx(hssA::HssLeaf, i::Vector{Int}, j::Vector{Int}) = HssLeaf(hssA.D[i,j], hssA.U[i,:], hssA.V[j,:])
 function _getidx(hssA::HssNode, i::Vector{Int}, j::Vector{Int})
