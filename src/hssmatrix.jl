@@ -101,16 +101,12 @@ getindex(hssA::HssMatrix, ::Colon, j) = getindex(hssA, 1:size(hssA,1), j)
 function getindex(hssA::HssMatrix{T}, i::Vector{Int}, j::Vector{Int}) where T
   m, n  = size(hssA)
   A = Matrix{T}(undef, length(i), length(j))
+  ip = sortperm(i); jp = sortperm(j)
   if (length(i) == 0 || length(j) == 0) return A end
-  permi = sortperm(i); permj = sortperm(j)
-  # check for out of bounds
-  1 ≤ i[permi[1]] ≤ m || throw(BoundsError("Attempted to access $(size(A)) array at index i=$(i[permi[1]])"))
-  1 ≤ i[permi[end]] ≤ m || throw(BoundsError("Attempted to access $(size(A)) array at index i=$(i[permi[end]])"))
-  1 ≤ j[permj[1]] ≤ n || throw(BoundsError("Attempted to access $(size(A)) array at index j=$(i[permj[1]])"))
-  1 ≤ j[permj[end]] ≤ n || throw(BoundsError("Attempted to access $(size(A)) array at index j=$(i[permj[end]])"))
-  A[invperm(permi), invperm(permj)] .= full(_getidx(hssA, i[permi], j[permj]))
-  return A
+  return full(_getidx(hssA, i[ip], j[jp]))[invperm(ip), invperm(jp)]
 end
+
+# old definition gets a sub-Hss matrix. keeping this code as it can be useful
 _getidx(hssA::HssLeaf, i::Vector{Int}, j::Vector{Int}) = HssLeaf(hssA.D[i,j], hssA.U[i,:], hssA.V[j,:])
 function _getidx(hssA::HssNode, i::Vector{Int}, j::Vector{Int})
   m1, n1 = hssA.sz1
@@ -243,15 +239,3 @@ function _cluster(hssA::HssNode, co::Int, ro::Int)
   ccl2, rcl2 = _cluster(hssA.A22, ccl1.data[end], rcl1.data[end])
   return ClusterTree(co:ccl2.data[end], ccl1, ccl2), ClusterTree(ro:rcl2.data[end], rcl1, rcl2)
 end
-
-
-# function Base.show(io::IOContext, hssA::HssMatrix)
-#   if max(size(S)...) < 16 && !(get(io, :compact, false)::Bool)
-#       ioc = IOContext(io, :compact => true)
-#       println(ioc)
-#       Base.print_matrix(ioc, hssA)
-#       return
-#   end
-#   println(io)
-#   _show_with_braille_patterns(io, S)
-# end

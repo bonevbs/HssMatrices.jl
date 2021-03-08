@@ -2,6 +2,8 @@ include("../src/HssMatrices.jl")
 using .HssMatrices
 using LinearAlgebra
 using BenchmarkTools
+using Random
+Random.seed!(123)
 
 ### run benchmarks on Cauchy matrix
 K(x,y) = (x-y) != 0 ? 1/(x-y) : 10000.
@@ -16,6 +18,11 @@ rcl = bisection_cluster(1:m, leafsize=lsz)
 ccl = bisection_cluster(1:n, leafsize=lsz)
 
 hssA = compress(A, rcl, ccl);
+
+# time access
+println("Benchmarking getindex...")
+ii = randperm(100); jj = randperm(100)
+@btime Aij = hssA[ii,jj];
 
 # time compression
 println("Benchmarking compression...")
