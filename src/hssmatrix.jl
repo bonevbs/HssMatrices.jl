@@ -91,7 +91,7 @@ copy(hssA::HssNode) = HssNode(copy(hssA.A11), copy(hssA.A22), copy(hssA.B12), co
 
 # implement sorted access to entries via recursion
 # in the long run we might want to return an HssMatrix when we access via getindex
-getindex(hssA::HssMatrix, i::Int, j::Int) = getindex(hssA, [i], [j])[1]
+getindex(hssA::HssMatrix, i::Int, j::Int) = _getidx(hssA, i, j)[1]
 getindex(hssA::HssMatrix, i::Int, j::AbstractRange) = getindex(hssA, [i], j)[:]
 getindex(hssA::HssMatrix, i::AbstractRange, j::Int) = getindex(hssA, i, [j])[:]
 getindex(hssA::HssMatrix, i::AbstractRange, j::AbstractRange) = getindex(hssA, collect(i), collect(j))
@@ -105,7 +105,7 @@ function getindex(hssA::HssMatrix{T}, i::Vector{Int}, j::Vector{Int}) where T
   return full(_getidx(hssA, i[ip], j[jp]))[invperm(ip), invperm(jp)]
 end
 
-# old definition gets a sub-Hss matrix. keeping this code as it can be useful
+# First construct a sub-HSS matrix and then call full()
 _getidx(hssA::HssLeaf, i::Vector{Int}, j::Vector{Int}) = HssLeaf(hssA.D[i,j], hssA.U[i,:], hssA.V[j,:])
 function _getidx(hssA::HssNode, i::Vector{Int}, j::Vector{Int})
   m1, n1 = hssA.sz1
@@ -114,6 +114,28 @@ function _getidx(hssA::HssNode, i::Vector{Int}, j::Vector{Int})
   A11 = _getidx(hssA.A11, i1, j1)
   A22 = _getidx(hssA.A22, i2, j2)
   return HssNode(A11, A22, hssA.B12, hssA.B21, hssA.R1, hssA.W1, hssA.R2, hssA.W2)
+end
+# for individual indices, it should be faster to access them in the following way
+_getidx(hssA::HssLeaf, i::Int, j::Int) = hssA.D[i,j]
+function _getidx(hssA::HssNode, i::Int, j::Int)
+  m1, n1 = hssA.sz1
+  if i <= m1
+    if j <= n1
+      return _getidx(hssA.A11, i, j)
+    else
+      U1 = _getindex_colgenerator(hssA.A11, i)
+      V2 = _getindex_rowgenerator(hssA.A22, j-n1)
+      return dot(U1*hssA.B12, V2)
+    end
+  else
+    if j <= n1
+      U2 = _getindex_colgenerator(hssA.A22, i-m1)
+      V1 = _getindex_rowgenerator(hssA.A11, j)
+      return dot(U2*hssA.B21, V1)
+    else
+      return _getidx(hssA.A22, i-m1, j-n1)
+    end
+  end
 end
 
 # maybe replace that later wit ha lazy adjjoint, which swaps cols and rows when called
@@ -251,7 +273,7 @@ function prune_leaves!(hssA::HssNode)
   end
 end
 
-# TODO: change this into a convert routine
+# returns D, U and V. replaces _full function
 _hssleaf(hssA::HssLeaf) = hssA.D, hssA.U, hssA.V
 function _hssleaf(hssA::HssNode)
   A11, U1, V1 = _hssleaf(hssA.A11)
