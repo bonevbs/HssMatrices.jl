@@ -289,8 +289,8 @@ function _extract_diagonal(A::AbstractMatOrLinOp{T}, rcl::ClusterTree, ccl::Clus
   elseif isbranch(rcl)
     A11 = _extract_diagonal(A, rcl.left, ccl.left)
     A22 = _extract_diagonal(A, rcl.right, ccl.right)
-    B12 = Matrix{Float64}(undef,0,0)
-    B21 = Matrix{Float64}(undef,0,0)
+    B12 = Matrix{T}(undef,0,0)
+    B21 = Matrix{T}(undef,0,0)
     return HssNode(A11, A22, B12, B21)
   else
     throw(ErrorException("Encountered node with only one child. Make sure that each node in the binary tree has either two children or is a leaf."))
@@ -299,8 +299,8 @@ end
 
 # this function compresses given the sampling matrix of rank k
 function _randcompress!(hssA::HssLeaf, A, Scol::Matrix, Srow::Matrix, Ωcol::Matrix, Ωrow::Matrix, ro::Int, co::Int, atol::Float64, rtol::Float64; rootnode=false)
-  Scol = Scol - hssA.D * Ωcol
-  Srow = Srow - hssA.D' * Ωrow
+  Scol .= Scol .- hssA.D * Ωcol
+  Srow .= Srow .- hssA.D' * Ωrow
 
   if rootnode return hssA end
 
@@ -382,6 +382,6 @@ function _interpolate(A::AbstractMatrix{T}, atol::Float64, rtol::Float64) where 
   tol = min( atol, rtol * abs(R[1,1]) )
   rk = sum(abs.(diag(R)) .> tol)
   J = p[1:rk];
-  X = R[1:rk, 1:rk]\R[1:rk,invperm(p)];
+  X = R[1:rk, 1:rk]\R[1:rk,invperm(p)]
   return X, J
 end

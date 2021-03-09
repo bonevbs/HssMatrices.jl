@@ -100,9 +100,8 @@ getindex(hssA::HssMatrix, i, ::Colon) = getindex(hssA, i, 1:size(hssA,2))
 getindex(hssA::HssMatrix, ::Colon, j) = getindex(hssA, 1:size(hssA,1), j)
 function getindex(hssA::HssMatrix{T}, i::Vector{Int}, j::Vector{Int}) where T
   m, n  = size(hssA)
-  A = Matrix{T}(undef, length(i), length(j))
   ip = sortperm(i); jp = sortperm(j)
-  if (length(i) == 0 || length(j) == 0) return A end
+  if (length(i) == 0 || length(j) == 0) return Matrix{T}(undef, length(i), length(j)) end
   return full(_getidx(hssA, i[ip], j[jp]))[invperm(ip), invperm(jp)]
 end
 
@@ -174,7 +173,7 @@ end
 ## Some more fundamental operations
 # compute the HSS rank
 hssrank(hssA::HssLeaf) = 0
-hssrank(hssA::HssNode) = max(hssrank(hssA.A11), hssrank(hssA.A22), rank(hssA.B12), rank(hssA.B21))
+hssrank(hssA::HssNode) = max(hssrank(hssA.A11), hssrank(hssA.A22), size(hssA.B12)..., size(hssA.B21)...)
 gensize(hssA::HssLeaf) = size(hssA.U,2), size(hssA.V,2)
 function gensize(hssA::HssNode)
   (kr = size(hssA.R1,2)) == size(hssA.R2,2) || throw(DimensionMismatch("dimensions of column-translators do not match"))
@@ -190,14 +189,38 @@ function root(hssA::HssNode)
   return HssNode(hssA.A11, hssA.A22, hssA.B12, hssA.B21)
 end
 
-# return a full matrix
-# TODO: change this into a convert routine
-full(hssA::HssMatrix) = _full(hssA)[1]
-_full(hssA::HssLeaf) = hssA.D, hssA.U, hssA.V
-function _full(hssA::HssNode)
-  A11, U1, V1 = _full(hssA.A11)
-  A22, U2, V2 = _full(hssA.A22)
-  return [A11 U1*hssA.B12*V2'; U2*hssA.B21*V1' A22], [U1*hssA.R1; U2*hssA.R2], [V1*hssA.W1; V2*hssA.W2]
+# return a full matrix (hopefully efficient implementation with pre-allocated memory)
+full(hssA::HssLeaf) = hssA.D
+function full(hssA::HssNode{T}) where T
+  m, n = size(hssA)
+  k = hssrank(hssA)
+  A = Matrix{T}(undef, m, n)
+  U = Matrix{T}(undef, m, k)
+  V = Matrix{T}(undef, n, k)
+  _full!(hssA, A, U, V, 0, 0; rootnode=true)
+  return A
+end
+# function that expands hss matrix using pre-allocated memory
+function _full!(hssA::HssLeaf, A::Matrix,  U::Matrix, V::Matrix, ro::Int, co::Int)
+  m, n = size(hssA)
+  A[ro+1:ro+m, co+1:co+n] = hssA.D
+  U[ro+1:ro+m, 1:size(hssA.U,2)] = hssA.U
+  V[co+1:co+n, 1:size(hssA.V,2)] = hssA.V
+end
+function _full!(hssA::HssNode, A::Matrix, U::Matrix, V::Matrix, ro::Int, co::Int; rootnode=false)
+  m1, n1 = hssA.sz1; m2, n2 = hssA.sz2
+  ru1, rv1 = gensize(hssA.A11)
+  ru2, rv2 = gensize(hssA.A22)
+  _full!(hssA.A11, A, U, V, ro, co)
+  _full!(hssA.A22, A, U, V, ro+m1, co+n1)
+  A[ro+1:ro+m1, co+n1+1:co+n1+n2] = U[ro+1:ro+m1, 1:ru1]*hssA.B12*V[co+n1+1:co+n1+n2, 1:rv2]'
+  A[ro+m1+1:ro+m1+m2, co+1:co+n1] = U[ro+m1+1:ro+m1+m2, 1:ru2]*hssA.B21*V[co+1:co+n1, 1:rv1]'
+  if !rootnode
+    U[ro+1:ro+m1, 1:size(hssA.R1,2)] = U[ro+1:ro+m1, 1:ru1]*hssA.R1
+    U[ro+m1+1:ro+m1+m2, 1:size(hssA.R2,2)] = U[ro+m1+1:ro+m1+m2, 1:ru2]*hssA.R2
+    V[co+1:co+n1, 1:size(hssA.W1,2)] = V[co+1:co+n1, 1:rv1]*hssA.W1
+    V[co+n1+1:co+n1+n2, 1:size(hssA.W2,2)] = V[co+n1+1:co+n1+n2, 1:rv2]*hssA.W2
+  end
 end
 
 # useful routine to check whether dimensions are compatible
@@ -220,12 +243,20 @@ end
 prune_leaves!(hssA::HssLeaf) = hssA
 function prune_leaves!(hssA::HssNode)
   if isleaf(hssA.A11) && isleaf(hssA.A22)
-    return HssLeaf(_full(hssA)...)
+    return HssLeaf(_hssleaf(hssA)...)
   else
     hssA.A11 = prune_leaves!(hssA.A11)
     hssA.A22 = prune_leaves!(hssA.A22)
     return hssA
   end
+end
+
+# TODO: change this into a convert routine
+_hssleaf(hssA::HssLeaf) = hssA.D, hssA.U, hssA.V
+function _hssleaf(hssA::HssNode)
+  A11, U1, V1 = _hssleaf(hssA.A11)
+  A22, U2, V2 = _hssleaf(hssA.A22)
+  return [A11 U1*hssA.B12*V2'; U2*hssA.B21*V1' A22], [U1*hssA.R1; U2*hssA.R2], [V1*hssA.W1; V2*hssA.W2]
 end
 
 ## write function that extracts the clustwer tree from an HSS matrix

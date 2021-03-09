@@ -19,12 +19,12 @@ end
 ## ULV divide algorithm to apply the inverse to another HSS matrix
 # temporary name for function that actually just computes the ULV factorization
 # the cluster structure in hssA and hssB should be compatible w/e that means...
-function _ldiv!(hssA::HssLeaf{T}, hssB::HssMatrix{T}) where T
-  D, U, V = _full(hssB)
+function _ldiv!(hssA::HssLeaf, hssB::HssMatrix)
+  D, U, V = _hssleaf(hssB)
   D = full(hssA) \ D
   return HssLeaf(D, U, V)
 end
-function _ldiv!(hssA::HssNode{T}, hssB::HssNode{T}) where T
+function _ldiv!(hssA::HssNode, hssB::HssNode)
   # bottom-up stage of the ULV solution algorithm
   hssL, QU, QL, QV, mk, nk, ktree  = _ulvfactor_leaves!(hssA, 0)
   hssB = _utransforms!(hssB, QU)

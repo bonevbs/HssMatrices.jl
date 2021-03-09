@@ -19,6 +19,10 @@ ccl = bisection_cluster(1:n, leafsize=lsz)
 
 hssA = compress(A, rcl, ccl);
 
+# time conversion to dense
+println("Benchmarking full...")
+@btime full(hssA);
+
 # time access
 println("Benchmarking getindex...")
 ii = randperm(100); jj = randperm(100)
@@ -51,5 +55,5 @@ b = randn(size(A,2), 10);
 
 # time hssldivide
 println("Benchmarking hssldivide...")
-hssX = compress(1.0*Matrix(I, n, n), ccl, ccl, atol=0., rtol=0.) # this should probably be one constructor
-@btime hssC = ldiv!(copy(hssA), hssX)
+hssX = compress(1.0*Matrix(I, n, n), ccl, ccl, atol=1e-3, rtol=1e-3); # this should probably be one constructor
+@btime hssC = ldiv!(copy(hssA), hssX);

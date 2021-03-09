@@ -105,7 +105,6 @@ module HssMatrices
     global leafsize = opts.leafsize
     global noversampling = opts.noversampling
     global stepsize = opts.stepsize
-    global recompress = opts.recompress
     global verbose = opts.verbose
     return opts
   end
