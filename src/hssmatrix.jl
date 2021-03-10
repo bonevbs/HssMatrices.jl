@@ -3,7 +3,7 @@
 
 ## new datastructure which splits the old one into two parts to avoid unnecessary allocations
 # definition of leaf nodes
-mutable struct HssLeaf{T<:Number} <: AbstractMatrix{T}
+mutable struct HssLeaf{T<:Number} #<: AbstractMatrix{T}
   D ::Matrix{T}
   U ::Matrix{T}
   V ::Matrix{T}
@@ -21,7 +21,7 @@ mutable struct HssLeaf{T<:Number} <: AbstractMatrix{T}
 end
 
 # definition of branch nodes
-mutable struct HssNode{T<:Number} <: AbstractMatrix{T}
+mutable struct HssNode{T<:Number} #<: AbstractMatrix{T}
   A11 ::Union{HssNode{T}, HssLeaf{T}}
   A22 ::Union{HssNode{T}, HssLeaf{T}}
   B12 ::Matrix{T}
