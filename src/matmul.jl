@@ -14,8 +14,8 @@
 *(hssA::HssMatrix, x::AbstractVector) = reshape(hssA * reshape(x, length(x), 1), length(x))
 
 # implement low-level mul! routines
-mul!(C::AbstractMatrix, hssA::HssLeaf, B::AbstractMatrix, α::Float64, β::Float64) = mul!(C, hssA.D, B, α, β)
-function mul!(C::AbstractMatrix, hssA::HssNode, B::AbstractMatrix, α::Float64, β::Float64)
+mul!(C::AbstractMatrix, hssA::HssLeaf, B::AbstractMatrix, α::Number, β::Number) = mul!(C, hssA.D, B, α, β)
+function mul!(C::AbstractMatrix, hssA::HssNode, B::AbstractMatrix, α::Number, β::Number)
   size(hssA,2) == size(B,1) ||  throw(DimensionMismatch("First dimension of B does not match second dimension of A. Expected $(size(A, 2)), got $(size(B, 1))"))
   size(C) == (size(hssA,1), size(B,2)) ||  throw(DimensionMismatch("Dimensions of C don't match up with A and B."))
   hssA = root(hssA) # this is to avoid top-generators getting in the way if this is called on a sub-block of the HSS matrix
@@ -25,7 +25,7 @@ end
 
 ## auxiliary functions for the fast multiplication algorithm
 # post-ordered step of mat-vec
-_matmatup(hssA::HssLeaf{T}, B::AbstractMatrix{T}) where T = BinaryNode{typeof(B)}(hssA.V' * B)
+_matmatup(hssA::HssLeaf{T}, B::AbstractMatrix{T}) where T = BinaryNode{typeof(B)}(hssA.V' * B) # this should probably be BinaryNode{Matrix{eltype(B)}}
 function _matmatup(hssA::HssNode{T}, B::AbstractMatrix{T}) where T
   n1 = hssA.sz1[2]
   Z1 = _matmatup(hssA.A11, B[1:n1,:])
@@ -34,12 +34,12 @@ function _matmatup(hssA::HssNode{T}, B::AbstractMatrix{T}) where T
   return Z
 end
 
-function _matmatdown!(C::AbstractMatrix{T}, hssA::HssLeaf{T}, B::AbstractMatrix{T}, Z::BinaryNode{AT}, F::Union{AbstractMatrix{T}, Nothing}, α, β) where {T, AT<:AbstractArray{T}}
+function _matmatdown!(C::AbstractMatrix{T}, hssA::HssLeaf{T}, B::AbstractMatrix{T}, Z::BinaryNode{AT}, F::Union{AbstractMatrix{T}, Nothing}, α::Number, β::Number) where {T, AT<:AbstractArray{T}}
   mul!(C, hssA.D, B , α, β)
   if !isnothing(F); mul!(C, hssA.U, F , α, 1.); end
   return C
 end
-function _matmatdown!(C::AbstractMatrix{T}, hssA::HssNode{T}, B::AbstractMatrix{T}, Z::BinaryNode{AT}, F::Union{AbstractMatrix{T}, Nothing}, α, β) where {T, AT<:AbstractArray{T}}
+function _matmatdown!(C::AbstractMatrix{T}, hssA::HssNode{T}, B::AbstractMatrix{T}, Z::BinaryNode{AT}, F::Union{AbstractMatrix{T}, Nothing}, α::Number, β::Number) where {T, AT<:AbstractArray{T}}
   m1, n1 = hssA.sz1
   if !isnothing(F)
     F1 = hssA.B12 * Z.right.data + hssA.R1 * F
