@@ -30,7 +30,7 @@ function _matmatup(hssA::HssNode{T}, B::AbstractMatrix{T}) where T
   n1 = hssA.sz1[2]
   Z1 = _matmatup(hssA.A11, B[1:n1,:])
   Z2 = _matmatup(hssA.A22, B[n1+1:end,:])
-  Z = BinaryNode{typeof(B)}(hssA.W1'*Z1.data .+ hssA.W2'*Z2.data, Z1, Z2)
+  Z = BinaryNode(hssA.W1'*Z1.data .+ hssA.W2'*Z2.data, Z1, Z2)
   return Z
 end
 
