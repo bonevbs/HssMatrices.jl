@@ -25,7 +25,7 @@ end
 
 ## auxiliary functions for the fast multiplication algorithm
 # post-ordered step of mat-vec
-_matmatup(hssA::HssLeaf{T}, B::AbstractMatrix{T}) where T = BinaryNode{typeof(B)}(hssA.V' * B) # this should probably be BinaryNode{Matrix{eltype(B)}}
+_matmatup(hssA::HssLeaf{T}, B::AbstractMatrix{T}) where T = BinaryNode{Matrix{eltype(B)}}(hssA.V' * B) # this should probably be BinaryNode{Matrix{eltype(B)}}
 function _matmatup(hssA::HssNode{T}, B::AbstractMatrix{T}) where T
   n1 = hssA.sz1[2]
   Z1 = _matmatup(hssA.A11, B[1:n1,:])
