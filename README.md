@@ -61,4 +61,6 @@ hssA = lowrank2hss(U, V, rcl, ccl)
 Stay tuned! More is in the works...
 
 ## Acknowledgements
-This library was inspired by the amazing package [hm-toolbox](https://github.com/numpi/hm-toolbox) by Stefano Massei, Leonardo Robol and Daniel Kressner. If you are on Matlab, I suggest you to check it out.
+This library was inspired by the amazing package [hm-toolbox](https://github.com/numpi/hm-toolbox) by Stefano Massei, Leonardo Robol and Daniel Kressner. If you are using Matlab, I highly recommend to try this package.
+
+In numerous occasions, members of the Julia Slack channel have helped me with the challenges of writing my first library in Julia. I would like to acknowledge their support.
