@@ -14,8 +14,8 @@
 *(hssA::HssMatrix, x::AbstractVector) = reshape(hssA * reshape(x, length(x), 1), length(x))
 
 # implement low-level mul! routines
-mul!(C::Matrix, hssA::HssLeaf, B::Matrix, α::Float64, β::Float64) = mul!(C, hssA.D, B, α, β)
-function mul!(C::Matrix, hssA::HssNode, B::Matrix, α::Float64, β::Float64)
+mul!(C::AbstractMatrix, hssA::HssLeaf, B::AbstractMatrix, α::Float64, β::Float64) = mul!(C, hssA.D, B, α, β)
+function mul!(C::AbstractMatrix, hssA::HssNode, B::AbstractMatrix, α::Float64, β::Float64)
   size(hssA,2) == size(B,1) ||  throw(DimensionMismatch("First dimension of B does not match second dimension of A. Expected $(size(A, 2)), got $(size(B, 1))"))
   size(C) == (size(hssA,1), size(B,2)) ||  throw(DimensionMismatch("Dimensions of C don't match up with A and B."))
   hssA = root(hssA) # this is to avoid top-generators getting in the way if this is called on a sub-block of the HSS matrix

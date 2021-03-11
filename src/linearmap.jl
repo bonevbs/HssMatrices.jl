@@ -86,8 +86,16 @@ function transpose(A::HermLinMap{T}) where T
   HermLinMap{T}(n, mul!, getidx, nothing)
 end
 
-mul!(C, A::Adjoint{<:Any,<:LinMap}, B::AbstractVecOrMat) = parent(A).mulc!(C, parent(A), B)
-mul!(C, A::Adjoint{<:Any,<:HermLinMap}, B::AbstractVecOrMat) = mul!(C, parent(A), B)
+# # copied over from LowRankApprox.jl
+# mul!(C, A::LinMap, B::AbstractVecOrMat) = A.mul!(C, A, B)
+# mul!(C, A::Adjoint{<:Any,<:LinMap}, B::AbstractVecOrMat) = parent(A).mulc!(C, parent(A), B)
+# mul!(C, A::Adjoint{<:Any,<:HermLinMap}, B::AbstractVecOrMat) = mul!(C, parent(A), B)
+# mul!(C, A::AbstractMatrix, B::Adjoint{<:Any,<:AbstractLinMap}) = adjoint!(C, parent(B)*A')
+# mul!(C, A::AbstractMatrix, B::AbstractLinMap) = adjoint!(C, B'*A')
+
+# *(A::LinMap{T}, x::AbstractVector) where T = (y = Array{T}(undef, size(A,1)); mul!(y, A, x))
+# *(A::LinMap{T}, B::AbstractMatrix) where T = (C = Array{T}(undef, size(A,1), size(B,2)); mul!(C, A, B))
+# *(A::AbstractMatrix, B::LinMap{T}) where T = (C = Array{T}(undef, size(A,1), size(B,2)); mul!(C, A, B))
 
 # scalar multiplication/division
 for (f, g) in ((:(A::LinMap), :(c::Number)), (:(c::Number), :(A::LinMap)))
@@ -117,7 +125,6 @@ end
 
 
 # operator addition/subtraction
-
 for (f, a) in ((:+, 1), (:-, -1))
   @eval begin
     function $f(A::HermLinMap{T}, B::HermLinMap{T}) where T
