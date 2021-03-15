@@ -3,20 +3,26 @@
 #
 # Written by Boris Bonev, Nov. 2020
 
-using LinearAlgebra
+using LinearAlgebra, LowRankApprox
 
 # generate convenience access functions that copies A
-prrqr(A::Matrix{T}, tol; reltol=false) where T = prrqr!(copy(A), tol; reltol=reltol)
+prrqr(A::Matrix, atol, rtol) = prrqr!(copy(A), atol, rtol)
+prrqr(A::Adjoint, atol, rtol) = prrqr!(collect(A), atol, rtol)
+prrqr!(A::Adjoint, atol, rtol) = prrqr!(collect(A), atol, rtol)
 
 # Utility routine to provide access to pivoted rank-revealing qr
-function _compress_block!(A::Matrix{T}; tol::Real, reltol::Bool) where T
-  Q, R, p = prrqr!(copy(A), tol; reltol)
-  rk = min(size(R)...)
-  return Q[:,1:rk], R[1:rk, invperm(p)]
+function _compress_block!(A::AbstractMatrix{T}, atol::Float64, rtol::Float64) where T
+  #Q, R, p = prrqr!(A, atol, rtol)
+  #rk = min(size(R)...)
+  #return Q[:,1:rk], R[1:rk, invperm(p)]
+  # temporarily using prrqr of LowRankApprox.jl
+  F = pqrfact(A; atol = atol, rtol = rtol)
+  rk = min(size(F.R)...)
+  return F.Q[:,1:rk], F.R[1:rk, invperm(F.p)]
 end
 
 # method for computing the pivoted rank-revealing qr in place
-function prrqr!(A::Matrix{T}, tol::Real; reltol=false::Bool) where T
+function prrqr!(A::Matrix{T}, atol::Float64, rtol::Float64) where T
   m, n = size(A)
 
   vnrm = sum(abs2, A, dims=1)
@@ -36,7 +42,11 @@ function prrqr!(A::Matrix{T}, tol::Real; reltol=false::Bool) where T
     vnrm[j] = mx
 
     # figure out whether to stop the rrqr
-    if ( reltol && sum(vnrm[j:end]) < sum(vnrm[1:j-1])*tol^2 ) || ( sum(vnrm[j:end]) < tol^2 )
+    nrm2 = sum(vnrm[1:j-1])
+    res2 = sum(vnrm[j:end])
+    tol2 = max(atol^2, nrm2*rtol^2)
+    if ( res2 <= tol2 ) || ( nrm2 == res2 == 0 )
+    #if ( sum(vnrm[j:end]) <= sum(vnrm[1:j-1])*rtol^2 ) && ( sum(vnrm[j:end]) <= atol^2 )
       A = A[1:jj,:]
       break
     end

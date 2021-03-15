@@ -2,6 +2,8 @@ include("../src/HssMatrices.jl")
 using .HssMatrices
 using LinearAlgebra
 using BenchmarkTools
+using Random
+Random.seed!(123)
 
 ### run benchmarks on Cauchy matrix
 K(x,y) = (x-y) != 0 ? 1/(x-y) : 10000.
@@ -12,18 +14,34 @@ b = randn(size(A,2), 5);
 m, n = size(A)
 #lsz = 64;
 lsz = 64;
-rcl = bisection_cluster(1:m, lsz)
-ccl = bisection_cluster(1:n, lsz)
+rcl = bisection_cluster(1:m, leafsize=lsz)
+ccl = bisection_cluster(1:n, leafsize=lsz)
 
-hssA = compress_direct(A, rcl, ccl);
+hssA = compress(A, rcl, ccl);
+
+# time conversion to dense
+println("Benchmarking full...")
+@btime full(hssA);
+
+# time access
+println("Benchmarking getindex...")
+ii = randperm(100); jj = randperm(100)
+@btime Aij = hssA[ii,jj];
 
 # time compression
 println("Benchmarking compression...")
-@btime hssA = compress_direct(A, rcl, ccl);
+@btime hssA = compress(A, rcl, ccl);
+
+# time compression
+println("Benchmarking randomized compression...")
+@btime hssA = randcompress_adaptive(A, rcl, ccl);
 
 println("Benchmarking re-compression...")
 hssB = copy(hssA)
-@btime hssA = recompress!(hssB; tol=1e-3);
+@btime hssA = recompress!(hssB; atol=1e-3, rtol=1e-3);
+
+println("Benchmarking addition...")
+@btime hssC = hssA + hssA
 
 # time matvec
 println("Benchmarking matvec...")
@@ -37,5 +55,5 @@ b = randn(size(A,2), 10);
 
 # time hssldivide
 println("Benchmarking hssldivide...")
-hssX = compress_direct(1.0*Matrix(I, n, n), ccl, ccl)
-@btime hssC = ldiv!(copy(hssA), hssX)
+hssX = compress(1.0*Matrix(I, n, n), ccl, ccl, atol=1e-3, rtol=1e-3); # this should probably be one constructor
+@btime hssC = ldiv!(copy(hssA), hssX);

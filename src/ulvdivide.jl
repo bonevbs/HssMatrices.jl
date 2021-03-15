@@ -9,23 +9,32 @@
 #
 # Written by Boris Bonev, Feb. 2021
 
+# function for acess that imitate the behavior in LinearAlgebra.jl
+ldiv!(hssA::HssMatrix, hssB::HssMatrix) = _ldiv!(copy(hssA), hssB)
+# lazy implementation of rdiv!
+function rdiv!(hssA::HssMatrix, hssB::HssMatrix)
+  hssA = adjoint(_ldiv!(adjoint(hssB), adjoint(hssA)))
+end
+
 ## ULV divide algorithm to apply the inverse to another HSS matrix
 # temporary name for function that actually just computes the ULV factorization
 # the cluster structure in hssA and hssB should be compatible w/e that means...
-function ldiv!(hssA::HssLeaf{T}, hssB::HssMatrix{T}) where T
-  D, U, V = _full(hssB)
+function _ldiv!(hssA::HssLeaf, hssB::HssMatrix)
+  D, U, V = _hssleaf(hssB)
   D = full(hssA) \ D
   return HssLeaf(D, U, V)
 end
-
-function ldiv!(hssA::HssNode{T}, hssB::HssNode{T}) where T
+function _ldiv!(hssA::HssNode, hssB::HssNode)
   # bottom-up stage of the ULV solution algorithm
   hssL, QU, QL, QV, mk, nk, ktree  = _ulvfactor_leaves!(hssA, 0)
   hssB = _utransforms!(hssB, QU)
   hssQB = _extract_crows(hssB, nk)
   hssY0 = _ltransforms!(hssB, QL)
+
+  # early exit if all remaining blocks are 0.
+  if size(hssQB,1) == 0; return hssB = _vtransforms!(hssB, QV); end
+  # TODO: this still fails if only one hss block gets fully eliminated - fix that!
   
-  # TODO: there is still a bug at this step when recompression is involved
   hssQB = hssQB - hssL * hssY0 # multiply triangularized part with solved part and substract from the
   hssQB = recompress!(hssQB)
   hssQB = prune_leaves!(hssQB)
@@ -35,7 +44,7 @@ function ldiv!(hssA::HssNode{T}, hssB::HssNode{T}) where T
   hssL = prune_leaves!(hssL)
 
   # recursively call mldivide
-  hssY1 = ldiv!(hssL, hssQB)
+  hssY1 = _ldiv!(hssL, hssQB)
 
   # do the unpacking
   hssB = _unpackadd_rows!(hssY0, hssY1, ktree)
@@ -43,6 +52,7 @@ function ldiv!(hssA::HssNode{T}, hssB::HssNode{T}) where T
   hssB = recompress!(hssB)
 end
 
+## The core routines which make up the division follow here
 # core routine to reduce the rows and triangularize the diagonal block via QR/LQ decompositions
 function _ulvreduce!(D::Matrix{T}, U::Matrix{T}, V::Matrix{T}) where T
   T <: Complex ? adj = 'C' : adj = 'T'
@@ -53,9 +63,10 @@ function _ulvreduce!(D::Matrix{T}, U::Matrix{T}, V::Matrix{T}) where T
   cind = m-k+1:m
   # can't be compressed, exit early
   if k >= m
-    # TODO: figure something out for this case
-    println("warning k = ", k, " m = ", m)
+    #@warn "Encountered a full-rank block with k=$(k). Clustering might not yield best performance!"
     L1 = Matrix{T}(undef, 0, 0)
+    qlf = (Matrix{T}(undef, m, 0), Vector{T}(undef, 0))
+    lqf = (Matrix{T}(undef, 0, n), Vector{T}(undef, 0))
   else
     # form QL decomposition of the row generators and apply it
     qlf = geqlf!(U);
@@ -67,10 +78,7 @@ function _ulvreduce!(D::Matrix{T}, U::Matrix{T}, V::Matrix{T}) where T
     L1 = L1[:,1:nk]
     L2 = ormlq!('R', adj, lqf..., D[end-k+1:end,:]) # update the bottom block of the diagonal block
     V = ormlq!('L', 'N', lqf..., V) # compute the updated off-diagonal generators on the right
-    # pass on uncompressed parts of the problem
-    #D = L2[:, nk+1:end]
     D = L2
-    #V = V[nk+1:end, :]
   end
   return D, U, V, L1, qlf, lqf, m-k, nk, k
 end
@@ -104,6 +112,7 @@ end
 ## functions to apply U, L and V transforms at the leaf level to hssB
 function _utransforms!(hssA::HssLeaf, Q::BinaryNode)
   eltype(hssA) <: Complex ? adj = 'C' : adj = 'T'
+  if size(Q.data[1], 1) == 0 return hssA end
   hssA.D = ormql!('L', adj, Q.data..., hssA.D)
   hssA.U = ormql!('L', adj, Q.data..., hssA.U)
   return hssA
@@ -120,6 +129,12 @@ function _vtransforms!(hssA::HssLeaf, Q::BinaryNode)
   eltype(hssA) <: Complex ? adj = 'C' : adj = 'T'
   hssA.D = ormlq!('L', adj, Q.data..., hssA.D)
   hssA.U = ormlq!('L', adj, Q.data..., hssA.U)
+  return hssA
+end
+function _rapplyv!(hssA::HssLeaf, Q::BinaryNode)
+  eltype(hssA) <: Complex ? adj = 'C' : adj = 'T'
+  hssA.D = ormlq!('R', adj, Q.data..., hssA.D)
+  hssA.V = ormlq!('R', adj, Q.data..., hssA.U)
   return hssA
 end
 

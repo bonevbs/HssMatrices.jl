@@ -19,8 +19,38 @@ BinaryNode(data) = BinaryNode{typeof(data)}(data)
 BinaryNode(left::BinaryNode{T}, right::BinaryNode{T}) where T = BinaryNode{T}(left, right)
 BinaryNode(data, left::BinaryNode, right::BinaryNode) = BinaryNode{typeof(data)}(data, left, right)
 
+# some utility functions
 isleaf(node::BinaryNode) = isnothing(node.left) && isnothing(node.right)
 isbranch(node::BinaryNode) = !isnothing(node.left) && !isnothing(node.right)
+
+depth(node::BinaryNode) = _depth(node, 1)
+function _depth(node::BinaryNode, level)
+  if isleaf(node)
+    return level
+  elseif !isnothing(node.left)
+    if !isnothing(node.right)
+      return max(_depth(node.left, level+1), _depth(node.right, level+1))
+    else
+      return _depth(node.left, level+1)
+    end
+  else
+    return _depth(node.right, level+1)
+  end
+end
+
+function nleaves(node::BinaryNode)
+  if isleaf(node)
+    return 1
+  elseif !isnothing(node.left)
+    if !isnothing(node.right)
+      return nleaves(node.left) + nleaves(node.right)
+    else
+      return nleaves(node.left)
+    end
+  else
+    return nleaves(node.right)
+  end
+end
 
 function AbstractTrees.children(node::BinaryNode)
   if !isnothing(node.left)
@@ -32,6 +62,18 @@ function AbstractTrees.children(node::BinaryNode)
   !isnothing(node.right) && return (node.right,)
   return ()
 end
+
+# routine to check equivalence of tree structures
+function compatible(node1::BinaryNode, node2::BinaryNode)
+  if isnothing(node1.left) ⊻ isnothing(node2.left) return false end
+  if isnothing(node1.right) ⊻ isnothing(node2.right) return false end
+  if !isnothing(node1.left) && !compatible(node1.left, node2.left) return false end
+  if !isnothing(node1.right) && !compatible(node1.right, node2.right) return false end
+  return true
+end
+
+==(node1::BinaryNode, node2::BinaryNode) = (node1.data == node2.data) && (node1.left == node2.left) && (node1.right == node2.right)
+!=(node1::BinaryNode, node2::BinaryNode) = (node1.data != node2.data) || (node1.left != node2.left) || (node1.right != node2.right)
 
 ## Optional enhancements
 # These next two definitions allow inference of the item type in iteration.
