@@ -98,7 +98,10 @@ Alternatively, we can visualize the clustering and the off-diagonal ranks by cal
 ```Julia
 plotranks(hssA)
 ```
-![Plotranks](./img/plotranks.svg)
+This should generate an image similar to the one seen at the top of the page.
+
+## Contribute
+We would like to encourage users to share their problems, bugs and experiences so that we can keep improving the library.
 
 ## Acknowledgements
 This library was inspired by the amazing package [hm-toolbox](https://github.com/numpi/hm-toolbox) by Stefano Massei, Leonardo Robol and Daniel Kressner. If you are using Matlab, I highly recommend to try this package.
