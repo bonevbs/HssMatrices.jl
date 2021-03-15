@@ -17,8 +17,21 @@
 #
 # Re-Written by Boris Bonev, Jan. 2021
 
-## Direct compression algorithm
-# wrapper function that will be exported
+"""
+  compress(A, rcl, ccl; args...)
+
+Direct HSS compression.
+
+# Arguments
+* `A`: Matrix to be compressed
+* `rcl`: row-cluster tree
+* `ccl`: column-cluster tree
+
+# Examples
+```julia
+julia> hssA = compress(A, rcl, ccl)
+```
+"""
 function compress(A::Matrix{T}, rcl::ClusterTree, ccl::ClusterTree, opts::HssOptions=HssOptions(T); args...) where T
   opts = copy(opts; args...)
   chkopts!(opts)
@@ -102,7 +115,19 @@ function _compress!(A::Matrix{T}, Brow::Matrix{T}, Bcol::Matrix{T}, rcl::Cluster
   return hssA, Brow, Bcol
 end
 
-## Recompression algorithm
+"""
+  recompress!(hssA; args...)
+
+Recompression of an HSS matrix
+
+# Arguments
+* `hssA`: HSS matrix for recompression
+
+# Examples
+```julia
+julia> hssA = recompress!(hssA, atol=1e-3, rtol=1e-3)
+```
+"""
 function recompress!(hssA::HssMatrix{T}, opts::HssOptions=HssOptions(T); args...) where T
   opts = copy(opts; args...)
   chkopts!(opts)
@@ -217,7 +242,22 @@ function _recompress!(hssA::HssNode{T}, Brow::Matrix{T}, Bcol::Matrix{T}, atol, 
   return hssA
 end
 
-## Randomized compression algorithm
+"""
+  randcompress(A, rcl, ccl, kest; args...)
+
+Randomized HSS compression.
+
+# Arguments
+* `A`: Either a Matrix or a LinearMap type, to be compressed
+* `rcl`: row-cluster tree
+* `ccl`: column-cluster tree
+* `kest`: rank estimate determines the size of the sampling matrix, as well as maximum off-diagonal rank
+
+# Examples
+```julia
+julia> hssA = randcompress(A, rcl, ccl, kest)
+```
+"""
 function randcompress(A::AbstractMatOrLinOp{T}, rcl::ClusterTree, ccl::ClusterTree, kest::Int, opts::HssOptions=HssOptions(T), args...) where T
   opts = copy(opts; args...)
   chkopts!(opts)
@@ -236,6 +276,22 @@ function randcompress(A::AbstractMatOrLinOp{T}, rcl::ClusterTree, ccl::ClusterTr
   return hssA
 end
 
+"""
+  randcompress_adaptive(A, rcl, ccl; kest=10 args...)
+
+Randomized HSS compression.
+
+# Arguments
+* `A`: Either a Matrix or a LinearMap type, to be compressed
+* `rcl`: row-cluster tree
+* `ccl`: column-cluster tree
+* `kest`: rank estimate determines the size of the sampling matrix, as well as maximum off-diagonal rank
+
+# Examples
+```julia
+julia> hssA = randcompress_adaptive(A, rcl, ccl, kest=20)
+```
+"""
 function randcompress_adaptive(A::AbstractMatOrLinOp{T}, rcl::ClusterTree, ccl::ClusterTree, opts::HssOptions=HssOptions(T); kest=10, args...) where T
   opts = copy(opts; args...)
   chkopts!(opts)
