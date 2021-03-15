@@ -73,7 +73,18 @@ Of course we can now perform some arithmetic using HSS matrices. HssMatrices imp
   hssA*x
   hssA\x
 ```
-These operations will automatically call the right routines for fast multiplication and fast matrix division. Moreover, we can also use HSS arithmetic to 
+These operations will automatically call the right routines for fast multiplication and fast matrix division. Moreover, we can also use HSS arithmetic to multiply Hss matrices with eachother and use left/right division on them:
+```Julia
+  hssA+hssB
+  hssA-hssB
+  hssA*hssB
+  hssA\hssB
+  hssA/hssB
+```
+Do not forget to call recompression in order to keep the ranks low!
+```Julia
+  recompress!(hssA)
+```
 ### Convenience routines
 We can also have a look at the generators and extract them via
 ```Julia
