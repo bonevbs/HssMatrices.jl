@@ -11,7 +11,7 @@ const ClusterTree = BinaryNode{UnitRange{Int}}
 
 ## Functionality for cluster trees
 # Create a simple cluster tree based on 
-bisection_cluster(n::Int, opts::HssOptions=HssOptions(); args...) = bisection_cluster(1:n, opts)
+bisection_cluster(n::Int, opts::HssOptions=HssOptions(); args...) = bisection_cluster(1:n, opts; args...)
 function bisection_cluster(range::UnitRange{Int}, opts::HssOptions=HssOptions(); args...)
   opts = copy(opts; args...)
   chkopts!(opts)

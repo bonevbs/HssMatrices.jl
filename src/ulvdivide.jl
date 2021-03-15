@@ -30,8 +30,11 @@ function _ldiv!(hssA::HssNode, hssB::HssNode)
   hssB = _utransforms!(hssB, QU)
   hssQB = _extract_crows(hssB, nk)
   hssY0 = _ltransforms!(hssB, QL)
+
+  # early exit if all remaining blocks are 0.
+  if size(hssQB,1) == 0; return hssB = _vtransforms!(hssB, QV); end
+  # TODO: this still fails if only one hss block gets fully eliminated - fix that!
   
-  # TODO: there is still a bug at this step when recompression is involved
   hssQB = hssQB - hssL * hssY0 # multiply triangularized part with solved part and substract from the
   hssQB = recompress!(hssQB)
   hssQB = prune_leaves!(hssQB)

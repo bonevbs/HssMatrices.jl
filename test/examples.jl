@@ -5,7 +5,8 @@ using AbstractTrees
 using Plots
 
 # generate Cauchy matrix
-K(x,y) = (x-y) != 0 ? 1/(x-y) : 1.
+K(x,y) = (x-y) > 0 ? 0.001/(x-y) : 2.
+#K(x,y) = (x-y) != 0 ? 1/(x-y) : 1.
 A = [ K(x,y) for x=-1:0.001:1, y=-1:0.001:1];
 
 # test the simple implementation of cluster trees
@@ -59,7 +60,6 @@ hssI = randcompress(IdOp, ccl, ccl, 0)
 hssC = rdiv!(hssI, hssA)
 println("rel. error in the solution of XA = I: ", norm(full(hssC) - inv(A)) / norm(inv(A)) )
 println("abs. error in the solution of XA = I: ", norm(full(hssC) - inv(A)) )
-
 
 
 # # test computation of generators
