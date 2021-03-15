@@ -1,20 +1,23 @@
 # HssMatrices.jl
 
-A Julia package for hierarchically semi-separable (HSS) matrices.
+`HssMatrices` is a Julia package for hierarchically semi-separable (HSS) matrices. These matrices are a type of hierarchically structured matrices, which often arise in the context of solving PDEs numerically. This package is intendend to help users experiment with these matrices and algorithms/arithmetic related to these matrices. It implements compression routines, arithmetic as well as helpful routines for clustering and visualization.
 
-This package is currently under development, use at your own risk and stay tuned for more!
+## Getting started
 
-## Examples
-
-This will be updated as I go. One can construct a `HssMatrix{T}` object from a dense matrix by calling
+Let us generate a simple Kernel matrix and convert it into HSS format:
 ```Julia
 using LinearAlgebra
 using HssMatrices
 
-A = [ 1/(i-j) for i=-1:0.02:1, j=-1:0.02:1];
-hssA = HssMatrix(A)
+K(x,y) = (x-y) != 0 ? 1/(x-y) : 1.
+A = [ K(x,y) for x=-1:0.001:1, y=-1:0.001:1]
+hssA = hss(A)
 ```
-this will automatically build a cluster tree and compress the matrix accordingly. The compression tolerance and the minimum leaf size for the bisection cluster are stored in the global variables.
+This will automatically build a cluster tree and compress the matrix accordingly. `hss()` acts as a smart constructor, which will construct the matrix depending on the supplied matrix and parameters. We can either pass these parameters, for instance by doing:
+```Julia
+hssA = hss(A, leafsize=64, atol=1e-6, rtol=1e-6)
+```
+
 
 ### Efficient matrix-vector and matrix-matrix multiplications
 Of course we can then perform some arithmetic using HSS matrices:
