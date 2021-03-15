@@ -1,6 +1,6 @@
 # HssMatrices.jl
 
-`HssMatrices` is a Julia package for hierarchically semi-separable (HSS) matrices. These matrices are a type of hierarchically structured matrices, which often arise in the context of solving PDEs numerically. This package is intendend to help users experiment with these matrices and algorithms/arithmetic related to these matrices. It implements compression routines, arithmetic as well as helpful routines for clustering and visualization.
+`HssMatrices` is a Julia package for hierarchically semi-separable (HSS) matrices. These matrices are a type of hierarchically structured matrices, that arise in the context of solving PDEs numerically, among others. `HssMatrices.jl` is intendend to help users experiment with HSS matrices and related algorithms. `HssMatrices.jl` implements compression routines, HSS arithmetic, as well as helpful routines for clustering and visualization.
 
 ## Getting started
 
