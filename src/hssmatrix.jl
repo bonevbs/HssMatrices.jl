@@ -91,6 +91,7 @@ copy(hssA::HssNode) = HssNode(copy(hssA.A11), copy(hssA.A22), copy(hssA.B12), co
 
 # implement sorted access to entries via recursion
 # in the long run we might want to return an HssMatrix when we access via getindex
+# TODO: add @boundscheck for the bound checking
 getindex(hssA::HssMatrix, i::Int, j::Int) = _getidx(hssA, i, j)[1]
 getindex(hssA::HssMatrix, i::Int, j::AbstractRange) = getindex(hssA, [i], j)[:]
 getindex(hssA::HssMatrix, i::AbstractRange, j::Int) = getindex(hssA, i, [j])[:]
@@ -212,6 +213,7 @@ function root(hssA::HssNode)
 end
 
 # return a full matrix (hopefully efficient implementation with pre-allocated memory)
+Matrix(hssA::HssMatrix) = full(hssA)
 full(hssA::HssLeaf) = hssA.D
 function full(hssA::HssNode{T}) where T
   m, n = size(hssA)
