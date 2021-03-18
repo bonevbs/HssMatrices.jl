@@ -263,7 +263,7 @@ function randcompress(A::AbstractMatOrLinOp{T}, rcl::ClusterTree, ccl::ClusterTr
   chkopts!(opts)
   m, n = size(A)
   compatible(rcl, ccl) || throw(ArgumentError("row and column clusters are not compatible"))
-  if typeof(A) <: AbstractMatrix A = LinOp(A) end
+  #if typeof(A) <: AbstractMatrix A = LinOp(A) end
   hssA = _extract_diagonal(A, rcl, ccl)
 
   # compute initial sampling
@@ -271,7 +271,7 @@ function randcompress(A::AbstractMatOrLinOp{T}, rcl::ClusterTree, ccl::ClusterTr
   Ωcol = randn(n, k+r)
   Ωrow = randn(m, k+r)
   Scol = A*Ωcol # this should invoke the magic of the linearoperator.jl type
-  Srow = A*Ωrow
+  Srow = A'*Ωrow
   hssA = _randcompress!(hssA, A, Scol, Srow, Ωcol, Ωrow, 0, 0, opts.atol, opts.rtol; rootnode=true)
   return hssA
 end
@@ -298,7 +298,7 @@ function randcompress_adaptive(A::AbstractMatOrLinOp{T}, rcl::ClusterTree, ccl::
   m, n = size(A)
   maxrank = n
   compatible(rcl, ccl) || throw(ArgumentError("row and column clusters are not compatible"))
-  if typeof(A) <: AbstractMatrix A = LinMap(A) end
+  #if typeof(A) <: AbstractMatrix A = LinMap(A) end
   hssA = _extract_diagonal(A, rcl, ccl)
 
   # compute initial sampling
@@ -306,8 +306,9 @@ function randcompress_adaptive(A::AbstractMatOrLinOp{T}, rcl::ClusterTree, ccl::
   #bs = Integer(ceil(n*0.01)) # this should probably be better estimated
   Ωcol = randn(n, k+r)
   Ωrow = randn(m, k+r)
+  println(typeof(A))
   Scol = A*Ωcol # this should invoke the magic of the linearoperator.jl type
-  Srow = A*Ωrow
+  Srow = A'*Ωrow
   failed = true
 
   while failed && k < maxrank

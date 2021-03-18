@@ -23,6 +23,7 @@ BinaryNode(data, left::BinaryNode, right::BinaryNode) = BinaryNode{typeof(data)}
 isleaf(node::BinaryNode) = isnothing(node.left) && isnothing(node.right)
 isbranch(node::BinaryNode) = !isnothing(node.left) && !isnothing(node.right)
 
+# counts the maximum depth of the tree
 depth(node::BinaryNode) = _depth(node, 1)
 function _depth(node::BinaryNode, level)
   if isleaf(node)
@@ -74,6 +75,15 @@ end
 
 ==(node1::BinaryNode, node2::BinaryNode) = (node1.data == node2.data) && (node1.left == node2.left) && (node1.right == node2.right)
 !=(node1::BinaryNode, node2::BinaryNode) = (node1.data != node2.data) || (node1.left != node2.left) || (node1.right != node2.right)
+
+# remove leaves on the bottom level
+function prune_leaves!(node::BinaryNode)
+  if isleaf(node.left) && isleaf(node.right)
+    node.left = nothing
+    node.right = nothing
+  end
+  return node
+end
 
 ## Optional enhancements
 # These next two definitions allow inference of the item type in iteration.

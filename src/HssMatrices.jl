@@ -28,7 +28,7 @@ module HssMatrices
   # HssMatrices.jl
   export HssOptions
   # binarytree.jl
-  export BinaryNode, leftchild, rightchild, isleaf, isbranch, depth, nleaves
+  export BinaryNode, leftchild, rightchild, isleaf, isbranch, depth, descendants, compatible, nleaves, prune_leaves!
   # clustertree.jl
   export bisection_cluster, cluster
   # linearmap.jl
