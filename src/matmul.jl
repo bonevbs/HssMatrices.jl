@@ -11,7 +11,7 @@
 ## TODO: read about promotion and improve the code
 # convenience access - TODO: maybe move to hssmatrix.jl in the future
 *(hssA::HssMatrix, B::AbstractMatrix) = mul!(similar(B, size(hssA,1), size(B,2)), hssA, B, 1., 0.)
-*(A::AbstractMatrix, hssB::HssMatrix) = copy(mul!(similar(A, size(A,1), size(hssB,2)), hssA', B', 1., 0.)')
+*(A::AbstractMatrix, hssB::HssMatrix) = copy(mul!(similar(A, size(A,1), size(hssB,2)), hssB', A', 1., 0.)')
 *(hssA::HssMatrix, x::AbstractVector) = reshape(hssA * reshape(x, length(x), 1), length(x))
 
 # implement low-level mul! routines
