@@ -262,7 +262,7 @@ function randcompress(A::AbstractMatOrLinOp{T}, rcl::ClusterTree, ccl::ClusterTr
   m, n = size(A)
   compatible(rcl, ccl) || throw(ArgumentError("row and column clusters are not compatible"))
   #if typeof(A) <: AbstractMatrix A = LinOp(A) end
-  hssA = _extract_diagonal(A, rcl, ccl)
+  hssA = hss_blkdiag(A, rcl, ccl)
 
   # compute initial sampling
   k = kest; r = opts.noversampling;
@@ -297,7 +297,7 @@ function randcompress_adaptive(A::AbstractMatOrLinOp{T}, rcl::ClusterTree, ccl::
   maxrank = n
   compatible(rcl, ccl) || throw(ArgumentError("row and column clusters are not compatible"))
   #if typeof(A) <: AbstractMatrix A = LinMap(A) end
-  hssA = _extract_diagonal(A, rcl, ccl)
+  hssA = hss_blkdiag(A, rcl, ccl)
 
   # compute initial sampling
   k = kest; r = opts.noversampling; bs = opts.stepsize
@@ -333,22 +333,6 @@ function randcompress_adaptive(A::AbstractMatOrLinOp{T}, rcl::ClusterTree, ccl::
   end
 
   return hssA
-end
-
-# this function compresses given the sampling matrix of rank k
-function _extract_diagonal(A::AbstractMatOrLinOp{T}, rcl::ClusterTree, ccl::ClusterTree) where T
-  if isleaf(rcl) # only check row cluster as we have already checked cluster equality
-    D = A[rcl.data, ccl.data]
-    return HssLeaf(convert(Matrix{T}, D))
-  elseif isbranch(rcl)
-    A11 = _extract_diagonal(A, rcl.left, ccl.left)
-    A22 = _extract_diagonal(A, rcl.right, ccl.right)
-    B12 = Matrix{T}(undef,0,0)
-    B21 = Matrix{T}(undef,0,0)
-    return HssNode(A11, A22, B12, B21)
-  else
-    throw(ErrorException("Encountered node with only one child. Make sure that each node in the binary tree has either two children or is a leaf."))
-  end
 end
 
 # this function compresses given the sampling matrix of rank k
@@ -438,4 +422,20 @@ function _interpolate(A::AbstractMatrix{T}, atol::Float64, rtol::Float64) where 
   J = p[1:rk];
   X = R[1:rk, 1:rk]\R[1:rk,invperm(p)]
   return X, J
+end
+
+# extracts the block-diagonal of a matrix as HSS matrix of rank 0
+function hss_blkdiag(A::AbstractMatOrLinOp{T}, rcl::ClusterTree, ccl::ClusterTree) where T
+  if isleaf(rcl) # only check row cluster as we have already checked cluster equality
+    D = A[rcl.data, ccl.data]
+    return HssLeaf(convert(Matrix{T}, D))
+  elseif isbranch(rcl)
+    A11 = hss_blkdiag(A, rcl.left, ccl.left)
+    A22 = hss_blkdiag(A, rcl.right, ccl.right)
+    B12 = Matrix{T}(undef,0,0)
+    B21 = Matrix{T}(undef,0,0)
+    return HssNode(A11, A22, B12, B21)
+  else
+    throw(ErrorException("Encountered node with only one child. Make sure that each node in the binary tree has either two children or is a leaf."))
+  end
 end

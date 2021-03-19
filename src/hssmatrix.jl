@@ -51,7 +51,6 @@ end
 
 # exterior constructors
 #HssNode(A11::Union{HssLeaf, HssNode}, A22::Union{HssLeaf, HssNode}, B12::Matrix, B21::Matrix, ::Nothing, ::Nothing, ::Nothing, ::Nothing) = HssNode(A11, A22, B12, B21)
-# TODO: add constructors that use compression methods
 
 # convenience alias (maybe unnecessary)
 const HssMatrix{T} = Union{HssLeaf{T}, HssNode{T}}

@@ -38,14 +38,14 @@ module HssMatrices
   # prrqr.jl
   export prrqr, prrqr!
   # compression.jl
-  export compress, randcompress, randcompress_adaptive, recompress!
+  export compress, randcompress, randcompress_adaptive, recompress!, hss_blkdiag
   # generators.jl  
   export generators, orthonormalize_generators!
   # matmul.jl
   # ulvfactor.jl
   export ulvfactsolve
   # ulvdivide.jl
-  export ldiv!, rdiv!, _ulvfactor_leaves!
+  export ldiv!, rdiv!
   # constructors.jl
   export lowrank2hss
   # visualization.jl
