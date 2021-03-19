@@ -284,12 +284,12 @@ end
 
 ## write function that extracts the clustwer tree from an HSS matrix
 cluster(hssA) = _cluster(hssA, 0, 0)
-function _cluster(hssA::HssLeaf, co::Int, ro::Int)
+function _cluster(hssA::HssLeaf, ro::Int, co::Int)
   m, n = size(hssA)
-  return ClusterTree(co.+(1:m)), ClusterTree(ro.+(1:n))
+  return ClusterTree(ro .+ (1:m)), ClusterTree(co .+ (1:n))
 end
-function _cluster(hssA::HssNode, co::Int, ro::Int)
-  ccl1, rcl1 = _cluster(hssA.A11, co, ro)
-  ccl2, rcl2 = _cluster(hssA.A22, ccl1.data[end], rcl1.data[end])
-  return ClusterTree(co:ccl2.data[end], ccl1, ccl2), ClusterTree(ro:rcl2.data[end], rcl1, rcl2)
+function _cluster(hssA::HssNode, ro::Int, co::Int)
+  rcl1, ccl1 = _cluster(hssA.A11, ro, co)
+  rcl2, ccl2 = _cluster(hssA.A22, rcl1.data[end], ccl1.data[end])
+  return ClusterTree(ro+1:rcl2.data[end], rcl1, rcl2), ClusterTree(co+1:ccl2.data[end], ccl1, ccl2)
 end
