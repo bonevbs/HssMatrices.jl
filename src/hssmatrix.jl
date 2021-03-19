@@ -61,7 +61,7 @@ function hss(A::AbstractMatrix, opts::HssOptions=HssOptions(Float64); args...)
   chkopts!(opts)
   hss(A, bisection_cluster(size(A,1), leafsize=opts.leafsize), bisection_cluster(size(A,2), leafsize=opts.leafsize); args...)
 end
-hss(A::Matrix, rcl::ClusterTree, ccl::ClusterTree; args...) = compress(A, rcl, ccl, args...)
+hss(A::Matrix, rcl::ClusterTree, ccl::ClusterTree; args...) = compress(A, rcl, ccl; args...)
 function hss(A::AbstractSparseMatrix, rcl::ClusterTree, ccl::ClusterTree; args...)
   m, n = size(A)
   # estimate rank by assuming that the non-zero entries are clustered on the diagonal
