@@ -104,8 +104,6 @@ function _compress!(A::Matrix{T}, Brow::Matrix{T}, Bcol::Matrix{T}, rcl::Cluster
   
   X = copy(Bcol')
   W, Bcol = _compress_block!(copy(Bcol'), atol, rtol);
-  #println(size(X))
-  #println(norm(X - W*Bcol)/norm(X))
   Bcol = copy(Bcol')
   W1 = W[1:rn1, :]
   W2 = W[rn1+1:end, :]
@@ -306,7 +304,6 @@ function randcompress_adaptive(A::AbstractMatOrLinOp{T}, rcl::ClusterTree, ccl::
   #bs = Integer(ceil(n*0.01)) # this should probably be better estimated
   Ωcol = randn(n, k+r)
   Ωrow = randn(m, k+r)
-  println(typeof(A))
   Scol = A*Ωcol # this should invoke the magic of the linearoperator.jl type
   Srow = A'*Ωrow
   failed = true

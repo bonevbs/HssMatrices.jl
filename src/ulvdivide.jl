@@ -169,13 +169,13 @@ end
 
 ## unpacking routine: unpacks hssB and adds it to hssA in place to contribute solution from lower levels
 function _unpackadd_rows!(hssA::HssNode, hssB::HssNode, ktree::BinaryNode{Int})
-  hssA.B12 = blkdiag(hssA.B12, hssB.B12)
-  hssA.B21 = blkdiag(hssA.B21, hssB.B21)
+  hssA.B12 = blkdiagm(hssA.B12, hssB.B12)
+  hssA.B21 = blkdiagm(hssA.B21, hssB.B21)
   
-  hssA.R1 = blkdiag(hssA.R1, hssB.R1)
-  hssA.W1 = blkdiag(hssA.W1, hssB.W1)
-  hssA.R2 = blkdiag(hssA.R2, hssB.R2)
-  hssA.W2 = blkdiag(hssA.W2, hssB.W2)
+  hssA.R1 = blkdiagm(hssA.R1, hssB.R1)
+  hssA.W1 = blkdiagm(hssA.W1, hssB.W1)
+  hssA.R2 = blkdiagm(hssA.R2, hssB.R2)
+  hssA.W2 = blkdiagm(hssA.W2, hssB.W2)
 
   hssA.A11 = _unpackadd_rows!(hssA.A11, hssB.A11, ktree.left)
   hssA.A22 = _unpackadd_rows!(hssA.A22, hssB.A22, ktree.right)
@@ -193,13 +193,13 @@ function _unpackadd_rows!(hssA::HssNode, hssB::HssLeaf, ktree::BinaryNode{Int})
   r, w = gensize(hssB)
 
   # perform the unpacking on the leaves of hssA
-  hssA.B12 = blkdiag(hssA.B12, zeros(r, w), Matrix(I, k1, k1))
-  hssA.B21 = blkdiag(hssA.B21, zeros(r, w), Matrix(I, k2, k2))
+  hssA.B12 = blkdiagm(hssA.B12, zeros(r, w), Matrix(I, k1, k1))
+  hssA.B21 = blkdiagm(hssA.B21, zeros(r, w), Matrix(I, k2, k2))
 
-  hssA.R1 = [blkdiag(hssA.R1, Matrix(I,r,r)); zeros(k1, size(hssA.R1,2)+r)]
-  hssA.W1 = [blkdiag(hssA.W1, Matrix(I,w,w)); zeros(k2, size(hssA.W1,2)+w)]
-  hssA.R2 = [blkdiag(hssA.R2, Matrix(I,r,r)); zeros(k2, size(hssA.R2,2)+r)]
-  hssA.W2 = [blkdiag(hssA.W2, Matrix(I,w,w)); zeros(k1, size(hssA.W2,2)+w)]
+  hssA.R1 = [blkdiagm(hssA.R1, Matrix(I,r,r)); zeros(k1, size(hssA.R1,2)+r)]
+  hssA.W1 = [blkdiagm(hssA.W1, Matrix(I,w,w)); zeros(k2, size(hssA.W1,2)+w)]
+  hssA.R2 = [blkdiagm(hssA.R2, Matrix(I,r,r)); zeros(k2, size(hssA.R2,2)+r)]
+  hssA.W2 = [blkdiagm(hssA.W2, Matrix(I,w,w)); zeros(k1, size(hssA.W2,2)+w)]
 
   # perform the extend-add operation on the leaves
   hssA.A11 = _unpackadd_rows!(hssA.A11, hssB.D[1:k1,1:n1], hssB.U[1:k1,:], hssB.V[1:n1,:], hssB.D[k1+1:end,1:n1]) # probably should add @view

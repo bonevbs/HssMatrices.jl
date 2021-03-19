@@ -34,7 +34,7 @@ module HssMatrices
   # linearmap.jl
   export LinearMap, HermitianLinearMap
   # hssmatrix.jl
-  export HssLeaf, HssNode, HssMatrix, hss, isleaf, isbranch, ishss, hssrank, full, checkdims, prune_leaves!
+  export HssLeaf, HssNode, HssMatrix, hss, isleaf, isbranch, ishss, hssrank, full, checkdims, prune_leaves!, blkdiagm
   # prrqr.jl
   export prrqr, prrqr!
   # compression.jl

@@ -152,8 +152,8 @@ transpose(hssA::HssLeaf) = HssLeaf(copy(transpose(hssA.D)), copy(hssA.V), copy(h
 transpose(hssA::HssNode) = HssNode(transpose(hssA.A11), transpose(hssA.A22), copy(transpose(hssA.B21)), copy(transpose(hssA.B12)), copy(hssA.W1), copy(hssA.R1), copy(hssA.W2), copy(hssA.R2))
 
 # Define Matlab-like convenience functions, which are used throughout the library
-blkdiag(A::Matrix, B::Matrix) = [A zeros(size(A,1), size(B,2)); zeros(size(B,1), size(A,2)) B]
-blkdiag(A::Matrix... ) = blkdiag(A[1], blkdiag(A[2:end]...))
+blkdiagm(A::Matrix, B::Matrix) = [A zeros(size(A,1), size(B,2)); zeros(size(B,1), size(A,2)) B]
+blkdiagm(A::Matrix... ) = blkdiagm(A[1], blkdiagm(A[2:end]...))
 
 ## basic algebraic operations (taken and modified from LowRankApprox.jl)
 for op in (:+,:-)
@@ -173,8 +173,8 @@ for op in (:+,:-)
     function $op(hssA::HssNode, hssB::HssNode)
       hssA.sz1 == hssB.sz1 || throw(DimensionMismatch("A11 has dimensions $(hssA.sz1) but B11 has dimensions $(hssB.sz1)"))
       hssA.sz2 == hssB.sz2 || throw(DimensionMismatch("A22 has dimensions $(hssA.sz2) but B22 has dimensions $(hssA.sz2)"))
-      hssC = HssNode($op(hssA.A11, hssB.A11), $op(hssA.A22, hssB.A22), blkdiag(hssA.B12, $op(hssB.B12)), blkdiag(hssA.B21, $op(hssB.B21)),
-        blkdiag(hssA.R1, hssB.R1), blkdiag(hssA.W1, hssB.W1), blkdiag(hssA.R2, hssB.R2), blkdiag(hssA.W2, hssB.W2))
+      hssC = HssNode($op(hssA.A11, hssB.A11), $op(hssA.A22, hssB.A22), blkdiagm(hssA.B12, $op(hssB.B12)), blkdiagm(hssA.B21, $op(hssB.B21)),
+        blkdiagm(hssA.R1, hssB.R1), blkdiagm(hssA.W1, hssB.W1), blkdiagm(hssA.R2, hssB.R2), blkdiagm(hssA.W2, hssB.W2))
     end
     #$op(L::LowRankMatrix,A::Matrix) = $op(promote(L,A)...)
     #$op(A::Matrix,L::LowRankMatrix) = $op(promote(A,L)...)

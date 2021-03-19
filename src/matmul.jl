@@ -63,8 +63,8 @@ function *(hssA::HssNode, hssB::HssNode)
   Z = _matmatup(hssA, hssB) # saves intermediate steps of multiplication in a binary tree structure
   F1 = hssA.B12 * Z.right.data * hssB.B21
   F2 = hssA.B21 * Z.left.data * hssB.B12
-  B12 = blkdiag(hssA.B12, hssB.B12)
-  B21 = blkdiag(hssA.B21, hssB.B21)
+  B12 = blkdiagm(hssA.B12, hssB.B12)
+  B21 = blkdiagm(hssA.B21, hssB.B21)
   A11 = _matmatdown!(hssA.A11, hssB.A11, Z.left, F1)
   A22 = _matmatdown!(hssA.A22, hssB.A22, Z.right, F2)
   hssC = HssNode(A11, A22, B12, B21)
