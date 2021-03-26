@@ -81,6 +81,13 @@ function prune_leaves!(node::BinaryNode)
   if isleaf(node.left) && isleaf(node.right)
     node.left = nothing
     node.right = nothing
+  else
+    if !isleaf(node.left)
+      node.left = prune_leaves!(node.left)
+    end
+    if !isleaf(node.right)
+      node.right = prune_leaves!(node.right)
+    end
   end
   return node
 end
