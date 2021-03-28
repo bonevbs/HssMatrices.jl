@@ -38,9 +38,9 @@ function _plotranks!(hssA::HssMatrix, co, ro, cticks, rticks, level, cl)
     _plotranks!(hssA.A22, co+n1, ro+m1, cticks, rticks, level+1, cl)
     # plot off-diagonal blocks
     plot!(_rectangle(n2, m1, co+n1, ro), color=:aliceblue, label=false)
-    if 0 < level < cl annotate!((co+n1+0.5*n2, ro+0.5*m1, text(max(size(hssA.B12)...), 8))) end
+    if 0 < level ≤ cl annotate!((co+n1+0.5*n2, ro+0.5*m1, text(max(size(hssA.B12)...), 8))) end
     plot!(_rectangle(n1, m2, co, ro+m1), color=:aliceblue, label=false)
-    if 0 < level < cl annotate!((co+0.5*n1, ro+m1+0.5*m2, text(max(size(hssA.B21)...), 8))) end
+    if 0 < level ≤ cl annotate!((co+0.5*n1, ro+m1+0.5*m2, text(max(size(hssA.B21)...), 8))) end
   end
   return rticks, cticks
 end
