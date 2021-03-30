@@ -59,37 +59,37 @@ end
 
 function orthonormalize_generators!(hssA::HssNode{T}) where T
   if isleaf(hssA.A11)
-    U1 = pqrfact(hssA.A11.U, sketch=:none); hssA.A11.U = Matrix(U1.Q)
-    V1 = pqrfact(hssA.A11.V, sketch=:none); hssA.A11.V = Matrix(V1.Q)
+    U1 = pqrfact!(hssA.A11.U, sketch=:none); hssA.A11.U = Matrix(U1.Q)
+    V1 = pqrfact!(hssA.A11.V, sketch=:none); hssA.A11.V = Matrix(V1.Q)
   else
     orthonormalize_generators!(hssA.A11)
-    U1 = pqrfact([hssA.A11.R1; hssA.A11.R2], sketch=:none)
-    V1 = pqrfact([hssA.A11.W1; hssA.A11.W2], sketch=:none)
+    U1 = pqrfact!([hssA.A11.R1; hssA.A11.R2], sketch=:none)
+    V1 = pqrfact!([hssA.A11.W1; hssA.A11.W2], sketch=:none)
     rm1 = size(hssA.A11.R1, 1)
-    #R = Matrix(U1.Q)
-    hssA.A11.R1 = U1.Q[1:rm1,:]
-    hssA.A11.R2 = U1.Q[rm1+1:end,:]
+    R = Matrix(U1.Q)
+    hssA.A11.R1 = @view R[1:rm1,:]
+    hssA.A11.R2 = @view R[rm1+1:end,:]
     rn1 = size(hssA.A11.W1, 1)
-    #W = Matrix(V1.Q)
-    hssA.A11.W1 = V1.Q[1:rn1,:]
-    hssA.A11.W2 = V1.Q[rn1+1:end,:]
+    W = Matrix(V1.Q)
+    hssA.A11.W1 = @view W[1:rn1,:]
+    hssA.A11.W2 = @view W[rn1+1:end,:]
   end
 
   if isleaf(hssA.A22)
-    U2 = pqrfact(hssA.A22.U, sketch=:none); hssA.A22.U = Matrix(U2.Q)
-    V2 = pqrfact(hssA.A22.V, sketch=:none); hssA.A22.V = Matrix(V2.Q)
+    U2 = pqrfact!(hssA.A22.U, sketch=:none); hssA.A22.U = Matrix(U2.Q)
+    V2 = pqrfact!(hssA.A22.V, sketch=:none); hssA.A22.V = Matrix(V2.Q)
   else
     orthonormalize_generators!(hssA.A22)
-    U2 = pqrfact([hssA.A22.R1; hssA.A22.R2], sketch=:none)
-    V2 = pqrfact([hssA.A22.W1; hssA.A22.W2], sketch=:none)
+    U2 = pqrfact!([hssA.A22.R1; hssA.A22.R2], sketch=:none)
+    V2 = pqrfact!([hssA.A22.W1; hssA.A22.W2], sketch=:none)
     rm1 = size(hssA.A22.R1, 1)
-    #R = Matrix(U2.Q)
-    hssA.A22.R1 = U2.Q[1:rm1,:]
-    hssA.A22.R2 = U2.Q[rm1+1:end,:]
+    R = Matrix(U2.Q)
+    hssA.A22.R1 = @view R[1:rm1,:]
+    hssA.A22.R2 = @view R[rm1+1:end,:]
     rn1 = size(hssA.A22.W1, 1)
-    #W = Matrix(V2.Q)
-    hssA.A22.W1 = V2.Q[1:rn1,:]
-    hssA.A22.W2 = V2.Q[rn1+1:end,:]
+    W = Matrix(V2.Q)
+    hssA.A22.W1 = @view W[1:rn1,:]
+    hssA.A22.W2 = @view W[rn1+1:end,:]
   end
   ipU1 = invperm(U1.p); ipV1 = invperm(V1.p)
   ipU2 = invperm(U2.p); ipV2 = invperm(V2.p)

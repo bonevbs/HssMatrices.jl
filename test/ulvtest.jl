@@ -16,7 +16,7 @@ rcl = bisection_cluster(1:m, leafsize=lsz)
 ccl = bisection_cluster(1:n, leafsize=lsz)
 hssA = compress(A, rcl, ccl);
 
-#hssA\hssA
+hssA\hssA
 
 n = 20000
 K(x,y) = (x-y) != 0 ? 1/(x-y) : 1000.
@@ -30,7 +30,7 @@ rcl = bisection_cluster(1:m, leafsize=lsz)
 ccl = bisection_cluster(1:n, leafsize=lsz)
 hssA = compress(A, rcl, ccl);
 
-@btime hssA\hssA
+@profview hssA\hssA
 
 # # test ULV normally
 # x = ulvfactsolve(hssA, b);
