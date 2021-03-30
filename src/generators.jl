@@ -67,12 +67,12 @@ function orthonormalize_generators!(hssA::HssNode{T}) where T
     V1 = pqrfact!([hssA.A11.W1; hssA.A11.W2], sketch=:none)
     rm1 = size(hssA.A11.R1, 1)
     R = Matrix(U1.Q)
-    hssA.A11.R1 = @view R[1:rm1,:]
-    hssA.A11.R2 = @view R[rm1+1:end,:]
+    hssA.A11.R1 = R[1:rm1,:]
+    hssA.A11.R2 = R[rm1+1:end,:]
     rn1 = size(hssA.A11.W1, 1)
     W = Matrix(V1.Q)
-    hssA.A11.W1 = @view W[1:rn1,:]
-    hssA.A11.W2 = @view W[rn1+1:end,:]
+    hssA.A11.W1 = W[1:rn1,:]
+    hssA.A11.W2 = W[rn1+1:end,:]
   end
 
   if isleaf(hssA.A22)
@@ -84,12 +84,12 @@ function orthonormalize_generators!(hssA::HssNode{T}) where T
     V2 = pqrfact!([hssA.A22.W1; hssA.A22.W2], sketch=:none)
     rm1 = size(hssA.A22.R1, 1)
     R = Matrix(U2.Q)
-    hssA.A22.R1 = @view R[1:rm1,:]
-    hssA.A22.R2 = @view R[rm1+1:end,:]
+    hssA.A22.R1 = R[1:rm1,:]
+    hssA.A22.R2 = R[rm1+1:end,:]
     rn1 = size(hssA.A22.W1, 1)
     W = Matrix(V2.Q)
-    hssA.A22.W1 = @view W[1:rn1,:]
-    hssA.A22.W2 = @view W[rn1+1:end,:]
+    hssA.A22.W1 = W[1:rn1,:]
+    hssA.A22.W2 = W[rn1+1:end,:]
   end
   ipU1 = invperm(U1.p); ipV1 = invperm(V1.p)
   ipU2 = invperm(U2.p); ipV2 = invperm(V2.p)
