@@ -151,8 +151,9 @@ transpose(hssA::HssLeaf) = HssLeaf(copy(transpose(hssA.D)), copy(hssA.V), copy(h
 transpose(hssA::HssNode) = HssNode(transpose(hssA.A11), transpose(hssA.A22), copy(transpose(hssA.B21)), copy(transpose(hssA.B12)), copy(hssA.W1), copy(hssA.R1), copy(hssA.W2), copy(hssA.R2))
 
 # Define Matlab-like convenience functions, which are used throughout the library
-blkdiagm(A::Matrix, B::Matrix) = [A zeros(size(A,1), size(B,2)); zeros(size(B,1), size(A,2)) B]
-blkdiagm(A::Matrix... ) = blkdiagm(A[1], blkdiagm(A[2:end]...))
+#blkdiagm(A::Matrix, B::Matrix) = [A zeros(size(A,1), size(B,2)); zeros(size(B,1), size(A,2)) B]
+#blkdiagm(A::Matrix... ) = blkdiagm(A[1], blkdiagm(A[2:end]...))
+blkdiagm(A::Matrix...) = cat(A[1:end]..., dims=(1,2))
 
 ## basic algebraic operations (taken and modified from LowRankApprox.jl)
 for op in (:+,:-)
