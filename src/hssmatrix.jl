@@ -13,7 +13,7 @@ mutable struct HssLeaf{T<:Number} <: AbstractMatrix{T}
     m, n = size(D)
     new{T}(D, Matrix{T}(undef, m, 0), Matrix{T}(undef, n, 0))
   end
-  function HssLeaf(D::Matrix{T}, U::Matrix{T}, V::Matrix{T}) where T
+  function HssLeaf(D::AbstractMatrix{T}, U::AbstractMatrix{T}, V::AbstractMatrix{T}) where T
     if size(D,1) != size(U,1) throw(ArgumentError("D and U must have same number of rows")) end
     if size(D,2) != size(V,1) throw(ArgumentError("D and V must have same number of columns")) end
     new{T}(D, U, V)
@@ -36,13 +36,13 @@ mutable struct HssNode{T<:Number} <: AbstractMatrix{T}
   W2 ::Matrix{T}
 
   # internal constructors with checks for dimensions
-  function HssNode(A11::Union{HssLeaf{T}, HssNode{T}}, A22::Union{HssLeaf{T}, HssNode{T}}, B12::Matrix{T}, B21::Matrix{T}) where T
+  function HssNode(A11::Union{HssLeaf{T}, HssNode{T}}, A22::Union{HssLeaf{T}, HssNode{T}}, B12::AbstractMatrix{T}, B21::AbstractMatrix{T}) where T
     kr1, kw1 = gensize(A11); kr2, kw2 = gensize(A22)
     new{T}(A11, A22, B12, B21, size(A11), size(A22),
       Matrix{Float64}(undef,kr1,0), Matrix{Float64}(undef,kw1,0), Matrix{Float64}(undef,kr2,0), Matrix{Float64}(undef,kw2,0))
   end
-  function HssNode(A11::Union{HssLeaf{T}, HssNode{T}}, A22::Union{HssLeaf{T}, HssNode{T}}, B12::Matrix{T}, B21::Matrix{T}, 
-    R1::Matrix{T}, W1::Matrix{T}, R2::Matrix{T}, W2::Matrix{T}) where T
+  function HssNode(A11::Union{HssLeaf{T}, HssNode{T}}, A22::Union{HssLeaf{T}, HssNode{T}}, B12::AbstractMatrix{T}, B21::AbstractMatrix{T}, 
+    R1::AbstractMatrix{T}, W1::AbstractMatrix{T}, R2::AbstractMatrix{T}, W2::AbstractMatrix{T}) where T
     if size(R1,2) != size(R2,2) throw(DimensionMismatch("R1 and R2 must have same number of columns")) end
     if size(W1,2) != size(W2,2) throw(DimensionMismatch("W1 and W2 must have same number of rows")) end
     new{T}(A11, A22, B12, B21, size(A11), size(A22), R1, W1, R2, W2)

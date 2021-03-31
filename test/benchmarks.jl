@@ -40,6 +40,10 @@ println("Benchmarking re-compression...")
 hssB = copy(hssA)
 @btime hssA = recompress!(hssB; atol=1e-3, rtol=1e-3);
 
+println("Benchmarking proper...")
+hssB = hssA + hssA
+@btime orthonormalize_generators!(hssB)
+
 println("Benchmarking addition...")
 @btime hssC = hssA + hssA
 
