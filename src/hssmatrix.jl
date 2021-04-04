@@ -76,20 +76,33 @@ function hss(A::AbstractSparseMatrix, rcl::ClusterTree, ccl::ClusterTree; args..
 end
 hss(A::LinearMap, rcl::ClusterTree, ccl::ClusterTree; args...) = randcompress_adaptive(A, rcl, ccl; args...)
 
-@inline isleaf(hssA::HssMatrix) = typeof(hssA) <: HssLeaf # check whether making this inline speeds up things ?
-@inline isbranch(hssA::HssMatrix) = typeof(hssA) <: HssNode
+@inline isleaf(hssA::HssMatrix) = hssA.leafnode # check whether making this inline speeds up things ?
+@inline isbranch(hssA::HssMatrix) = !hssA.leafnode
+@inline isroot(hssA::HssMatrix) = hssA.rootnode
 
 @inline ishss(A::AbstractMatrix) = typeof(A) <: HssMatrix
 
-size(hssA::HssLeaf) = size(hssA.D)
-size(hssA::HssNode) = hssA.sz1 .+ hssA.sz2
+size(hssA::HssMatrix) = isleaf(hssA) ? size(hssA.D) : hssA.sz1 .+ hssA.sz2
 size(hssA::HssMatrix, dim::Integer) = size(hssA)[dim]
 
-show(io::IO, hssA::HssLeaf) = print(io, "$(size(hssA,1))x$(size(hssA,2)) HssLeaf{$(eltype(hssA))}")
-show(io::IO, hssA::HssNode) = print(io, "$(size(hssA,1))x$(size(hssA,2)) HssNode{$(eltype(hssA))}")
+show(io::IO, hssA::HssMatrix) = print(io, "$(size(hssA,1))x$(size(hssA,2)) HssMatrix{$(eltype(hssA))}")
 
-copy(hssA::HssLeaf) = HssLeaf(copy(hssA.D), copy(hssA.U), copy(hssA.V))
-copy(hssA::HssNode) = HssNode(copy(hssA.A11), copy(hssA.A22), copy(hssA.B12), copy(hssA.B21), copy(hssA.R1), copy(hssA.W1), copy(hssA.R2), copy(hssA.W2))
+# perhaps, this should be deepcopy?
+function copy(hssA::HssMatrix)
+  if isleaf(hssA)
+    if isroot(hssA)
+      return HssMatrix(copy(hssA.D))
+    else
+      return HssMatrix(copy(hssA.D), copy(hssA.U), copy(hssA.V))
+    end
+  else
+    if isroot(hssA)
+      return HssMatrix(copy(hssA.A11), copy(hssA.A22), copy(hssA.B12), copy(hssA.B21))
+    else
+      return HssMatrix(copy(hssA.A11), copy(hssA.A22), copy(hssA.B12), copy(hssA.B21), copy(hssA.R1), copy(hssA.W1), copy(hssA.R2), copy(hssA.W2))
+    end
+  end
+end
 
 # implement sorted access to entries via recursion
 # in the long run we might want to return an HssMatrix when we access via getindex
@@ -105,17 +118,17 @@ function getindex(hssA::HssMatrix{T}, i::Vector{Int}, j::Vector{Int}) where T
   m, n  = size(hssA)
   ip = sortperm(i); jp = sortperm(j)
   if (length(i) == 0 || length(j) == 0) return Matrix{T}(undef, length(i), length(j)) end
-  return full(_getidx(hssA, i[ip], j[jp]))[invperm(ip), invperm(jp)]
+  return full(_getidx(hssA, i[ip], j[jp]), Val(hssA.leafnode))[invperm(ip), invperm(jp)]
 end
 
 # First construct a sub-HSS matrix and then call full()
-_getidx(hssA::HssLeaf, i::Vector{Int}, j::Vector{Int}) = HssLeaf(hssA.D[i,j], hssA.U[i,:], hssA.V[j,:])
-function _getidx(hssA::HssNode, i::Vector{Int}, j::Vector{Int})
+_getidx(hssA::HssMatrix, i::Vector{Int}, j::Vector{Int}, ::Val{true}) = HssMatrix(hssA.D[i,j], hssA.U[i,:], hssA.V[j,:])
+function _getidx(hssA::HssMatrix, i::Vector{Int}, j::Vector{Int}, ::Val{false})
   m1, n1 = hssA.sz1
   i1 = i[i .<= m1]; j1 = j[j .<= n1]
   i2 = i[i .> m1] .- m1; j2 = j[j .> n1] .- n1
-  A11 = _getidx(hssA.A11, i1, j1)
-  A22 = _getidx(hssA.A22, i2, j2)
+  A11 = _getidx(hssA.A11, i1, j1, Val(hssA.A11.leafnode))
+  A22 = _getidx(hssA.A22, i2, j2, Val(hssA.A11.leafnode))
   return HssNode(A11, A22, hssA.B12, hssA.B21, hssA.R1, hssA.W1, hssA.R2, hssA.W2)
 end
 # for individual indices, it should be faster to access them in the following way
