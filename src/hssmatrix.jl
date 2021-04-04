@@ -1,29 +1,20 @@
 ### Definitions of datastructures and basic constructors and operators
 # Written by Boris Bonev, Jan. 2021
 
-## new datastructure which splits the old one into two parts to avoid unnecessary allocations
-# definition of leaf nodes
-mutable struct HssLeaf{T<:Number} <: AbstractMatrix{T}
+## new datastructure which is the old datastructure
+mutable struct HssMatrix{T<:Number} <: AbstractMatrix{T}
+  # toggles for the type of node
+  leafnode::Bool
+  rootnode::Bool
+
+  # fields for leaf nodes
   D ::Matrix{T}
   U ::Matrix{T}
   V ::Matrix{T}
 
-  # constructor
-  function HssLeaf(D::Matrix{T}) where T
-    m, n = size(D)
-    new{T}(D, Matrix{T}(undef, m, 0), Matrix{T}(undef, n, 0))
-  end
-  function HssLeaf(D::AbstractMatrix{T}, U::AbstractMatrix{T}, V::AbstractMatrix{T}) where T
-    if size(D,1) != size(U,1) throw(ArgumentError("D and U must have same number of rows")) end
-    if size(D,2) != size(V,1) throw(ArgumentError("D and V must have same number of columns")) end
-    new{T}(D, U, V)
-  end
-end
-
-# definition of branch nodes
-mutable struct HssNode{T<:Number} <: AbstractMatrix{T}
-  A11 ::Union{HssNode{T}, HssLeaf{T}}
-  A22 ::Union{HssNode{T}, HssLeaf{T}}
+  # fields for branch nodes
+  A11 ::HssMatrix{T}
+  A22 ::HssMatrix{T}
   B12 ::Matrix{T}
   B21 ::Matrix{T}
 
@@ -35,25 +26,37 @@ mutable struct HssNode{T<:Number} <: AbstractMatrix{T}
   R2 ::Matrix{T}
   W2 ::Matrix{T}
 
-  # internal constructors with checks for dimensions
-  function HssNode(A11::Union{HssLeaf{T}, HssNode{T}}, A22::Union{HssLeaf{T}, HssNode{T}}, B12::AbstractMatrix{T}, B21::AbstractMatrix{T}) where T
-    kr1, kw1 = gensize(A11); kr2, kw2 = gensize(A22)
-    new{T}(A11, A22, B12, B21, size(A11), size(A22),
-      Matrix{Float64}(undef,kr1,0), Matrix{Float64}(undef,kw1,0), Matrix{Float64}(undef,kr2,0), Matrix{Float64}(undef,kw2,0))
+  # internal constructors for leaf nodes
+  function HssMatrix(D::Matrix{T}) where T
+    m, n = size(D)
+    new{T}(true, true, D)
   end
-  function HssNode(A11::Union{HssLeaf{T}, HssNode{T}}, A22::Union{HssLeaf{T}, HssNode{T}}, B12::AbstractMatrix{T}, B21::AbstractMatrix{T}, 
+  function HssMatrix(D::AbstractMatrix{T}, U::AbstractMatrix{T}, V::AbstractMatrix{T}) where T
+    if size(D,1) != size(U,1) throw(ArgumentError("D and U must have same number of rows")) end
+    if size(D,2) != size(V,1) throw(ArgumentError("D and V must have same number of columns")) end
+    new{T}(true, false, D, U, V)
+  end
+  # internal constructors for branch nodes
+  function HssMatrix(A11::HssMatrix{T}, A22::HssMatrix{T}, B12::AbstractMatrix{T}, B21::AbstractMatrix{T}) where T
+    #kr1, kw1 = gensize(A11); kr2, kw2 = gensize(A22)
+    hssA = new{T}(false, true)
+    hssA.A11 = A11; hssA.A22 = A22
+    hssA.B12 = B12; hssA.B21 = B21
+    hssA.sz1 = size(A11); hssA.sz2 = size(A22)
+    return hssA
+  end
+  function HssMatrix(A11::HssMatrix{T}, A22::HssMatrix{T}, B12::AbstractMatrix{T}, B21::AbstractMatrix{T}, 
     R1::AbstractMatrix{T}, W1::AbstractMatrix{T}, R2::AbstractMatrix{T}, W2::AbstractMatrix{T}) where T
     if size(R1,2) != size(R2,2) throw(DimensionMismatch("R1 and R2 must have same number of columns")) end
     if size(W1,2) != size(W2,2) throw(DimensionMismatch("W1 and W2 must have same number of rows")) end
-    new{T}(A11, A22, B12, B21, size(A11), size(A22), R1, W1, R2, W2)
+    #kr1, kw1 = gensize(A11); kr2, kw2 = gensize(A22)
+    new{T}(false, false, UndefInitializer, UndefInitializer, UndefInitializer, A11, A22, B12, B21, size(A11), size(A22), R1, W1, R2, W2)
+    hssA = new{T}(false, true)
+    hssA.A11 = A11; hssA.A22 = A22
+    hssA.B12 = B12; hssA.B21 = B21
+    hssA.sz1 = size(A11); hssA.sz2 = size(A22)
   end
 end
-
-# exterior constructors
-#HssNode(A11::Union{HssLeaf, HssNode}, A22::Union{HssLeaf, HssNode}, B12::Matrix, B21::Matrix, ::Nothing, ::Nothing, ::Nothing, ::Nothing) = HssNode(A11, A22, B12, B21)
-
-# convenience alias (maybe unnecessary)
-const HssMatrix{T} = Union{HssLeaf{T}, HssNode{T}}
 
 # custom constructors which are calling the compression algorithms
 function hss(A::AbstractMatrix, opts::HssOptions=HssOptions(Float64); args...)
