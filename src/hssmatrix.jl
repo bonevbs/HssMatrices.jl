@@ -27,30 +27,31 @@ mutable struct HssMatrix{T<:Number} <: AbstractMatrix{T}
   W2 ::Matrix{T}
 
   # internal constructors for leaf nodes
-  function HssMatrix(D::Matrix{T}) where T
+  function HssMatrix(D::Matrix{T}, rootnode=true) where T
     m, n = size(D)
-    new{T}(true, true, D)
+    new{T}(true, rootnode, D, Matrix{T}(undef, m, 0), Matrix{T}(undef, n, 0))
   end
-  function HssMatrix(D::AbstractMatrix{T}, U::AbstractMatrix{T}, V::AbstractMatrix{T}) where T
+  function HssMatrix(D::AbstractMatrix{T}, U::AbstractMatrix{T}, V::AbstractMatrix{T}, rootnode=false) where T
     if size(D,1) != size(U,1) throw(ArgumentError("D and U must have same number of rows")) end
     if size(D,2) != size(V,1) throw(ArgumentError("D and V must have same number of columns")) end
-    new{T}(true, false, D, U, V)
+    new{T}(true, rootnode, D, U, V)
   end
   # internal constructors for branch nodes
-  function HssMatrix(A11::HssMatrix{T}, A22::HssMatrix{T}, B12::AbstractMatrix{T}, B21::AbstractMatrix{T}) where T
-    #kr1, kw1 = gensize(A11); kr2, kw2 = gensize(A22)
-    hssA = new{T}(false, true)
+  function HssMatrix(A11::HssMatrix{T}, A22::HssMatrix{T}, B12::AbstractMatrix{T}, B21::AbstractMatrix{T}, rootnode=true) where T
+    kr1, kw1 = gensize(A11); kr2, kw2 = gensize(A22)
+    hssA = new{T}(false, rootnode)
     hssA.A11 = A11; hssA.A22 = A22
     hssA.B12 = B12; hssA.B21 = B21
     hssA.sz1 = size(A11); hssA.sz2 = size(A22)
+    hssA.R1 = Matrix{Float64}(undef,kr1,0); hssA.W1 = Matrix{Float64}(undef,kw1,0)
+    hssA.R2 = Matrix{Float64}(undef,kr2,0); hssA.W2 = Matrix{Float64}(undef,kw2,0)
     return hssA
   end
   function HssMatrix(A11::HssMatrix{T}, A22::HssMatrix{T}, B12::AbstractMatrix{T}, B21::AbstractMatrix{T}, 
-    R1::AbstractMatrix{T}, W1::AbstractMatrix{T}, R2::AbstractMatrix{T}, W2::AbstractMatrix{T}) where T
+    R1::AbstractMatrix{T}, W1::AbstractMatrix{T}, R2::AbstractMatrix{T}, W2::AbstractMatrix{T}, rootnode=false) where T
     if size(R1,2) != size(R2,2) throw(DimensionMismatch("R1 and R2 must have same number of columns")) end
     if size(W1,2) != size(W2,2) throw(DimensionMismatch("W1 and W2 must have same number of rows")) end
-    new{T}(false, false)
-    hssA = new{T}(false, true)
+    hssA = new{T}(false, rootnode)
     hssA.A11 = A11; hssA.A22 = A22
     hssA.B12 = B12; hssA.B21 = B21
     hssA.sz1 = size(A11); hssA.sz2 = size(A22)
@@ -148,51 +149,27 @@ end
 # perhaps, this should be deepcopy?
 function copy(hssA::HssMatrix)
   if isleaf(hssA)
-    if isroot(hssA)
-      return HssMatrix(copy(hssA.D))
-    else
-      return HssMatrix(copy(hssA.D), copy(hssA.U), copy(hssA.V))
-    end
+    return HssMatrix(copy(hssA.D), copy(hssA.U), copy(hssA.V), hssA.rootnode)
   else
-    if isroot(hssA)
-      return HssMatrix(copy(hssA.A11), copy(hssA.A22), copy(hssA.B12), copy(hssA.B21))
-    else
-      return HssMatrix(copy(hssA.A11), copy(hssA.A22), copy(hssA.B12), copy(hssA.B21), copy(hssA.R1), copy(hssA.W1), copy(hssA.R2), copy(hssA.W2))
-    end
+    return HssMatrix(copy(hssA.A11), copy(hssA.A22), copy(hssA.B12), copy(hssA.B21), copy(hssA.R1), copy(hssA.W1), copy(hssA.R2), copy(hssA.W2), hssA.rootnode)
   end
 end
 
 # introduce lazy adjoint, then all this copying won't be necessary
 function adjoint(hssA::HssMatrix)
   if isleaf(hssA)
-    if isroot(hssA)
-      return HssMatrix(copy(adjoint(hssA.D)))
-    else
-      return HssMatrix(copy(adjoint(hssA.D)), copy(hssA.V), copy(hssA.U))
-    end
+    return HssMatrix(copy(adjoint(hssA.D)), copy(hssA.V), copy(hssA.U), hssA.rootnode)
   else
-    if isroot(hssA)
-      return HssMatrix(adjoint(hssA.A11), adjoint(hssA.A22), copy(adjoint(hssA.B21)), copy(adjoint(hssA.B12)))
-    else
-      return HssMatrix(adjoint(hssA.A11), adjoint(hssA.A22), copy(adjoint(hssA.B21)), copy(adjoint(hssA.B12)), copy(hssA.W1), copy(hssA.R1), copy(hssA.W2), copy(hssA.R2))
-    end
+    return HssMatrix(adjoint(hssA.A11), adjoint(hssA.A22), copy(adjoint(hssA.B21)), copy(adjoint(hssA.B12)), copy(hssA.W1), copy(hssA.R1), copy(hssA.W2), copy(hssA.R2), hssA.rootnode)
   end
 end
 
 # transpose
 function transpose(hssA::HssMatrix)
   if isleaf(hssA)
-    if isroot(hssA)
-      return HssMatrix(copy(transpose(hssA.D)))
-    else
-      return HssMatrix(copy(transpose(hssA.D)), copy(hssA.V), copy(hssA.U))
-    end
+    return HssMatrix(copy(transpose(hssA.D)), copy(hssA.V), copy(hssA.U), hssA.rootnode)
   else
-    if isroot(hssA)
-      return HssMatrix(transpose(hssA.A11), transpose(hssA.A22), copy(transpose(hssA.B21)), copy(transpose(hssA.B12)))
-    else
-      return HssMatrix(transpose(hssA.A11), transpose(hssA.A22), copy(transpose(hssA.B21)), copy(transpose(hssA.B12)), copy(hssA.W1), copy(hssA.R1), copy(hssA.W2), copy(hssA.R2))
-    end
+    return HssMatrix(transpose(hssA.A11), transpose(hssA.A22), copy(transpose(hssA.B21)), copy(transpose(hssA.B12)), copy(hssA.W1), copy(hssA.R1), copy(hssA.W2), copy(hssA.R2), hssA.rootnode)
   end
 end
 

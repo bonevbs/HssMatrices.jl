@@ -114,7 +114,7 @@ module HssMatrices
   include("linearmap.jl")
   include("hssmatrix.jl")
   include("prrqr.jl")
-  #include("compression.jl")
+  include("compression.jl")
   include("generators.jl")
   #include("matmul.jl")
   #include("ulvfactor.jl")

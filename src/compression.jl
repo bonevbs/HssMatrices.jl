@@ -41,9 +41,9 @@ function compress(A::Matrix{T}, rcl::ClusterTree, ccl::ClusterTree, opts::HssOpt
   Brow = Array{T}(undef, m, 0)
   Bcol = Array{T}(undef, 0, n)
   if isleaf(rcl) && isleaf(ccl)
-    hssA, _, _ = _compress!(A, Brow, Bcol, rcl.data, ccl.data, opts.atol, opts.rtol)
+    hssA, _, _ = _compress!(A, Brow, Bcol, rcl.data, ccl.data, opts.atol, opts.rtol; rootnode=true)
   elseif isbranch(rcl) && isbranch(ccl)
-    hssA, _, _ = _compress!(A, Brow, Bcol, rcl, ccl, opts.atol, opts.rtol)
+    hssA, _, _ = _compress!(A, Brow, Bcol, rcl, ccl, opts.atol, opts.rtol; rootnode=true)
   else
     throw(ArgumentError("row and column clusters are not compatible"))
   end
@@ -51,14 +51,18 @@ function compress(A::Matrix{T}, rcl::ClusterTree, ccl::ClusterTree, opts::HssOpt
 end
 
 # leaf node function for compression
-function _compress!(A::Matrix{T}, Brow::Matrix{T}, Bcol::Matrix{T}, rows::UnitRange{Int}, cols::UnitRange{Int}, atol::Float64, rtol::Float64) where T
-  U, Brow = _compress_block!(Brow, atol, rtol)
-  V, Bcol = _compress_block!(Bcol', atol, rtol) #TODO: write code that is better at dealing with Julia's lazy transpose
-  return HssLeaf(A[rows, cols], U, V), Brow, copy(Bcol')
+function _compress!(A::Matrix{T}, Brow::Matrix{T}, Bcol::Matrix{T}, rows::UnitRange{Int}, cols::UnitRange{Int}, atol::Float64, rtol::Float64; rootnode=false) where T
+  if rootnode
+    HssMatrix(A[rows, cols])
+  else
+    U, Brow = _compress_block!(Brow, atol, rtol)
+    V, Bcol = _compress_block!(Bcol', atol, rtol) #TODO: write code that is better at dealing with Julia's lazy transpose
+    return HssMatrix(A[rows, cols], U, V), Brow, copy(Bcol')
+  end
 end
 
 # branch node function for compression
-function _compress!(A::Matrix{T}, Brow::Matrix{T}, Bcol::Matrix{T}, rcl::ClusterTree, ccl::ClusterTree, atol::Float64, rtol::Float64) where T
+function _compress!(A::Matrix{T}, Brow::Matrix{T}, Bcol::Matrix{T}, rcl::ClusterTree, ccl::ClusterTree, atol::Float64, rtol::Float64; rootnode=false) where T
   m1 = length(rcl.left.data); m2 = length(rcl.right.data)
   n1 = length(ccl.left.data); n2 = length(ccl.right.data)
 
@@ -96,20 +100,23 @@ function _compress!(A::Matrix{T}, Brow::Matrix{T}, Bcol::Matrix{T}, rcl::Cluster
   # clean up stuff from the front and form the composed HSS block row/col for compression
   Brow = [Brow1[:, n2+1:end]; Brow2[:, rn1+1:end]]
   Bcol = [Bcol1[m2+1:end, :]  Bcol2[rm1+1:end, :]]
-  
-  # do the actual compression and disentangle blocks of the translation operators
-  R, Brow = _compress_block!(Brow, atol, rtol)
-  R1 = R[1:rm1, :]
-  R2 = R[rm1+1:end, :]
-  
-  X = copy(Bcol')
-  W, Bcol = _compress_block!(copy(Bcol'), atol, rtol);
-  Bcol = copy(Bcol')
-  W1 = W[1:rn1, :]
-  W2 = W[rn1+1:end, :]
 
-  # call recursively the 
-  hssA = HssNode(A11, A22, B12, B21, R1, W1, R2, W2)
+  if !rootnode
+    # do the actual compression and disentangle blocks of the translation operators
+    R, Brow = _compress_block!(Brow, atol, rtol)
+    R1 = R[1:rm1, :]
+    R2 = R[rm1+1:end, :]
+    
+    X = copy(Bcol')
+    W, Bcol = _compress_block!(copy(Bcol'), atol, rtol);
+    Bcol = copy(Bcol')
+    W1 = W[1:rn1, :]
+    W2 = W[rn1+1:end, :]
+    
+    hssA = HssMatrix(A11, A22, B12, B21, R1, W1, R2, W2)
+  else
+    hssA = HssMatrix(A11, A22, B12, B21)
+  end
   return hssA, Brow, Bcol
 end
 
@@ -132,6 +139,7 @@ function recompress!(hssA::HssMatrix{T}, opts::HssOptions=HssOptions(T); args...
   rtol = opts.rtol; atol = opts.atol;
 
   if isleaf(hssA); return hssA; end
+  if !isroot(hssA); error("Expected rootnode for recompression"); end
 
   # a prerequisite for this algorithm to work is that generators are orthonormal
   orthonormalize_generators!(hssA)
@@ -144,12 +152,6 @@ function recompress!(hssA::HssMatrix{T}, opts::HssOptions=HssOptions(T); args...
 
   hssA.B12 = S2*Q2
   hssA.B21 = S1*Q1
-
-  # fix dimensions of ghost-translators in rootnode
-  hssA.R1 = hssA.R1[1:size(hssA.B12, 1),:]
-  hssA.W1 = hssA.W1[1:size(hssA.B21, 2),:]
-  hssA.R2 = hssA.R2[1:size(hssA.B21, 1),:]
-  hssA.W2 = hssA.W2[1:size(hssA.B12, 2),:]
 
   # pass information to children and proceed recursively
   if isbranch(hssA.A11)
@@ -183,7 +185,7 @@ function recompress!(hssA::HssMatrix{T}, opts::HssOptions=HssOptions(T); args...
   return hssA
 end
 
-function _recompress!(hssA::HssNode{T}, Brow::Matrix{T}, Bcol::Matrix{T}, atol, rtol) where T
+function _recompress!(hssA::HssMatrix{T}, Brow::Matrix{T}, Bcol::Matrix{T}, atol, rtol) where T
   # compress B12
   Brow1 = [hssA.B12  hssA.R1*Brow]
   Bcol2 = [hssA.B12' hssA.W2*Bcol]
@@ -270,7 +272,7 @@ function randcompress(A::AbstractMatOrLinOp{T}, rcl::ClusterTree, ccl::ClusterTr
   Ωrow = randn(m, k+r)
   Scol = A*Ωcol # this should invoke the magic of the linearoperator.jl type
   Srow = A'*Ωrow
-  hssA = _randcompress!(hssA, A, Scol, Srow, Ωcol, Ωrow, 0, 0, opts.atol, opts.rtol; rootnode=true)
+  hssA, _, _, _, _, _, _, _, _ = _randcompress!(hssA, A, Scol, Srow, Ωcol, Ωrow, 0, 0, opts.atol, opts.rtol; rootnode=true)
   return hssA
 end
 
@@ -310,7 +312,7 @@ function randcompress_adaptive(A::AbstractMatOrLinOp{T}, rcl::ClusterTree, ccl::
 
   while failed && k < maxrank
     # TODO: In further versions we might want to re-use the information gained during previous attempts
-    hssA = _randcompress!(hssA, A, Scol, Srow, Ωcol, Ωrow, 0, 0, opts.atol, opts.rtol; rootnode=true)
+    hssA, _, _, _, _, _, _, _, _  = _randcompress!(hssA, A, Scol, Srow, Ωcol, Ωrow, 0, 0, opts.atol, opts.rtol; rootnode=true)
 
     Ωcol_test = randn(n, bs)
     Ωrow_test = randn(m, bs)
@@ -336,77 +338,78 @@ function randcompress_adaptive(A::AbstractMatOrLinOp{T}, rcl::ClusterTree, ccl::
 end
 
 # this function compresses given the sampling matrix of rank k
-function _randcompress!(hssA::HssLeaf, A, Scol::Matrix, Srow::Matrix, Ωcol::Matrix, Ωrow::Matrix, ro::Int, co::Int, atol::Float64, rtol::Float64; rootnode=false)
-  Scol .= Scol .- hssA.D * Ωcol
-  Srow .= Srow .- hssA.D' * Ωrow
+function _randcompress!(hssA::HssMatrix, A, Scol::Matrix, Srow::Matrix, Ωcol::Matrix, Ωrow::Matrix, ro::Int, co::Int, atol::Float64, rtol::Float64; rootnode=false)
+  if isleaf(hssA)
+    Scol .= Scol .- hssA.D * Ωcol
+    Srow .= Srow .- hssA.D' * Ωrow
 
-  if rootnode return hssA end
+    if rootnode return hssA end
 
-  # take care of column-space
-  Xcol, Jcol = _interpolate(Scol', atol, rtol)
-  hssA.U = Xcol'
-  Scol = Scol[Jcol, :]
-  U = Xcol'
-  Jcol .= ro .+ Jcol
+    # take care of column-space
+    Xcol, Jcol = _interpolate(Scol', atol, rtol)
+    hssA.U = Xcol'
+    Scol = Scol[Jcol, :]
+    U = Xcol'
+    Jcol .= ro .+ Jcol
 
-  # same for the row-space
-  Xrow, Jrow = _interpolate(Srow', atol, rtol)
-  hssA.V = Xrow'
-  Srow = Srow[Jrow, :]
-  V = Xrow'
-  Jrow .= co .+ Jrow
+    # same for the row-space
+    Xrow, Jrow = _interpolate(Srow', atol, rtol)
+    hssA.V = Xrow'
+    Srow = Srow[Jrow, :]
+    V = Xrow'
+    Jrow .= co .+ Jrow
 
-  return hssA, Scol, Srow, Ωcol, Ωrow, Jcol, Jrow, U, V 
-end
-function _randcompress!(hssA::HssNode, A, Scol::Matrix, Srow::Matrix, Ωcol::Matrix, Ωrow::Matrix, ro::Int, co::Int, atol::Float64, rtol::Float64; rootnode=false)
-  m1, n1 = hssA.sz1; m2, n2 = hssA.sz2
-  hssA.A11, Scol1, Srow1, Ωcol1, Ωrow1, Jcol1, Jrow1, U1, V1 = _randcompress!(hssA.A11, A, Scol[1:m1, :], Srow[1:n1, :], Ωcol[1:n1, :], Ωrow[1:m1, :], ro, co, atol, rtol)
-  hssA.A22, Scol2, Srow2, Ωcol2, Ωrow2, Jcol2, Jrow2, U2, V2 = _randcompress!(hssA.A22, A, Scol[m1+1:end, :], Srow[n1+1:end, :], Ωcol[n1+1:end, :], Ωrow[m1+1:end, :], ro+m1, co+n1, atol, rtol)
-  
-  # update the sampling matrix based on the extracted generators
-  Ωcol2 = V2' * Ωcol2
-  Ωcol1 = V1' * Ωcol1
-  Ωrow2 = U2' * Ωrow2
-  Ωrow1 = U1' * Ωrow1
-  # step 1 in the algorithm: look only at extracted rows/cols
-  Jcol = [Jcol1; Jcol2]
-  Jrow = [Jrow1; Jrow2]
-  Ωcol = [Ωcol1; Ωcol2]
-  Ωrow = [Ωrow1; Ωrow2]
-  # extract the correct generator blocks
-  hssA.B12 = A[Jcol1, Jrow2]
-  hssA.B21 = A[Jcol2, Jrow1]
-  # subtract the diagonal block
-  Scol = [Scol1 .- hssA.B12  * Ωcol2;  Scol2 .- hssA.B21  * Ωcol1 ];
-  Srow = [Srow1 .- hssA.B21' * Ωrow2;  Srow2 .- hssA.B12' * Ωrow1 ];
-
-  if rootnode
-    rk1, wk1 = gensize(hssA.A11)
-    rk2, wk2 = gensize(hssA.A22)
-    hssA.R1 = Matrix{eltype(hssA)}(undef, rk1, 0)
-    hssA.R2 = Matrix{eltype(hssA)}(undef, rk2, 0)
-    hssA.W1 = Matrix{eltype(hssA)}(undef, wk1, 0)
-    hssA.W2 = Matrix{eltype(hssA)}(undef, wk2, 0)
-
-    return hssA
+    return hssA, Scol, Srow, Ωcol, Ωrow, Jcol, Jrow, U, V 
   else
-    # take care of the columns
-    Xcol, Jcolloc = _interpolate(Scol', atol, rtol)
-    hssA.R1 = Xcol[:, 1:size(Scol1, 1)]'
-    hssA.R2 = Xcol[:, size(Scol1, 1)+1:end]'
-    Scol = Scol[Jcolloc, :]
-    Jcol = Jcol[Jcolloc]
-    U = [hssA.R1; hssA.R2]
+    m1, n1 = hssA.sz1; m2, n2 = hssA.sz2
+    hssA.A11, Scol1, Srow1, Ωcol1, Ωrow1, Jcol1, Jrow1, U1, V1 = _randcompress!(hssA.A11, A, Scol[1:m1, :], Srow[1:n1, :], Ωcol[1:n1, :], Ωrow[1:m1, :], ro, co, atol, rtol)
+    hssA.A22, Scol2, Srow2, Ωcol2, Ωrow2, Jcol2, Jrow2, U2, V2 = _randcompress!(hssA.A22, A, Scol[m1+1:end, :], Srow[n1+1:end, :], Ωcol[n1+1:end, :], Ωrow[m1+1:end, :], ro+m1, co+n1, atol, rtol)
     
-    # take care of the rows
-    Xrow, Jrowloc = _interpolate(Srow', atol, rtol)
-    hssA.W1 = Xrow[:, 1:size(Srow1, 1)]'
-    hssA.W2 = Xrow[:, size(Srow1, 1)+1:end]'
-    Srow = Srow[Jrowloc, :]
-    Jrow = Jrow[Jrowloc]
-    V = [hssA.W1; hssA.W2]
+    # update the sampling matrix based on the extracted generators
+    Ωcol2 = V2' * Ωcol2
+    Ωcol1 = V1' * Ωcol1
+    Ωrow2 = U2' * Ωrow2
+    Ωrow1 = U1' * Ωrow1
+    # step 1 in the algorithm: look only at extracted rows/cols
+    Jcol = [Jcol1; Jcol2]
+    Jrow = [Jrow1; Jrow2]
+    Ωcol = [Ωcol1; Ωcol2]
+    Ωrow = [Ωrow1; Ωrow2]
+    # extract the correct generator blocks
+    hssA.B12 = A[Jcol1, Jrow2]
+    hssA.B21 = A[Jcol2, Jrow1]
+    # subtract the diagonal block
+    Scol = [Scol1 .- hssA.B12  * Ωcol2;  Scol2 .- hssA.B21  * Ωcol1 ];
+    Srow = [Srow1 .- hssA.B21' * Ωrow2;  Srow2 .- hssA.B12' * Ωrow1 ];
 
-    return hssA, Scol, Srow, Ωcol, Ωrow, Jcol, Jrow, U, V
+    if rootnode
+      rk1, wk1 = gensize(hssA.A11)
+      rk2, wk2 = gensize(hssA.A22)
+      hssA.rootnode = true
+
+      U = Matrix{eltype(hssA)}(undef, rk1+rk2, 0)
+      V = Matrix{eltype(hssA)}(undef, wk1+wk2, 0)
+
+      return hssA, Scol, Srow, Ωcol, Ωrow, Jcol, Jrow, U, V
+    else
+      # take care of the columns
+      Xcol, Jcolloc = _interpolate(Scol', atol, rtol)
+      hssA.R1 = Xcol[:, 1:size(Scol1, 1)]'
+      hssA.R2 = Xcol[:, size(Scol1, 1)+1:end]'
+      Scol = Scol[Jcolloc, :]
+      Jcol = Jcol[Jcolloc]
+      U = [hssA.R1; hssA.R2]
+      
+      # take care of the rows
+      Xrow, Jrowloc = _interpolate(Srow', atol, rtol)
+      hssA.W1 = Xrow[:, 1:size(Srow1, 1)]'
+      hssA.W2 = Xrow[:, size(Srow1, 1)+1:end]'
+      Srow = Srow[Jrowloc, :]
+      Jrow = Jrow[Jrowloc]
+      V = [hssA.W1; hssA.W2]
+
+      return hssA, Scol, Srow, Ωcol, Ωrow, Jcol, Jrow, U, V
+    end
   end
 end
 
@@ -425,16 +428,29 @@ function _interpolate(A::AbstractMatrix{T}, atol::Float64, rtol::Float64) where 
 end
 
 # extracts the block-diagonal of a matrix as HSS matrix of rank 0
-function hss_blkdiag(A::AbstractMatOrLinOp{T}, rcl::ClusterTree, ccl::ClusterTree) where T
+function hss_blkdiag(A::AbstractMatOrLinOp{T}, rcl::ClusterTree, ccl::ClusterTree; rootnode=true) where T
+  m = length(rcl.data); n = length(ccl.data)
   if isleaf(rcl) # only check row cluster as we have already checked cluster equality
-    D = A[rcl.data, ccl.data]
-    return HssLeaf(convert(Matrix{T}, D))
+    D = convert(Matrix{T}, A[rcl.data, ccl.data])
+    if rootnode
+      return HssMatrix(D)
+    else
+      return HssMatrix(D, Matrix{T}(undef,m,0), Matrix{T}(undef,n,0))
+    end
   elseif isbranch(rcl)
-    A11 = hss_blkdiag(A, rcl.left, ccl.left)
-    A22 = hss_blkdiag(A, rcl.right, ccl.right)
+    A11 = hss_blkdiag(A, rcl.left, ccl.left; rootnode=false)
+    A22 = hss_blkdiag(A, rcl.right, ccl.right; rootnode=false)
     B12 = Matrix{T}(undef,0,0)
     B21 = Matrix{T}(undef,0,0)
-    return HssNode(A11, A22, B12, B21)
+    if rootnode
+      return HssMatrix(A11, A22, B12, B21)
+    else
+      R1 = Matrix{T}(undef,0,0)
+      W1 = Matrix{T}(undef,0,0)
+      R2 = Matrix{T}(undef,0,0)
+      W2 = Matrix{T}(undef,0,0)
+      return HssMatrix(A11, A22, B12, B21, R1, W1, R2, W2)
+    end
   else
     throw(ErrorException("Encountered node with only one child. Make sure that each node in the binary tree has either two children or is a leaf."))
   end
