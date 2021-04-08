@@ -117,8 +117,8 @@ module HssMatrices
   include("compression.jl")
   include("generators.jl")
   include("matmul.jl")
-  #include("ulvfactor.jl")
-  #include("ulvdivide.jl")
+  include("ulvfactor.jl")
+  include("ulvdivide.jl")
   #include("constructors.jl")
   include("visualization.jl")
 end

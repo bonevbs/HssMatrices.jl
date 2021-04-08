@@ -64,9 +64,9 @@ end
 ## multiplication of two HSS matrices
 function *(hssA::HssMatrix, hssB::HssMatrix)
   if isleaf(hssA) && isleaf(hssA)
-    hssC = HssMatrix(hssA.D*hssB.D, hssA.U, hssB.V)
+    hssC = HssMatrix(hssA.D*hssB.D, hssA.U, hssB.V, true)
   elseif isbranch(hssA) && isbranch(hssA)
-    hssA = rooted(hssA)
+    hssA = rooted(hssA); hssB = rooted(hssB)
     # implememnt cluster equality checks
     #if cluster(hssA,2) != cluster(hssB,1); throw(DimensionMismatch("clusters of hssA and hssB must be matching")) end
     Z = _matmatup(hssA, hssB) # saves intermediate steps of multiplication in a binary tree structure
@@ -76,7 +76,7 @@ function *(hssA::HssMatrix, hssB::HssMatrix)
     B21 = blkdiagm(hssA.B21, hssB.B21)
     A11 = _matmatdown!(hssA.A11, hssB.A11, Z.left, F1)
     A22 = _matmatdown!(hssA.A22, hssB.A22, Z.right, F2)
-    hssC = HssMatrix(A11, A22, B12, B21)
+    hssC = HssMatrix(A11, A22, B12, B21, true)
   else
     error("Clusters don't seem to match")
   end
@@ -86,7 +86,7 @@ end
 function _matmatup(hssA::HssMatrix{T}, hssB::HssMatrix{T}) where T<:Number
   if isleaf(hssA) & isleaf(hssB)
     return BinaryNode{Matrix{T}}(hssA.V' * hssB.U)
-  elseif isbranch(hssA) && isbranch(hssA)
+  elseif isbranch(hssA) && isbranch(hssB)
     Z1 = _matmatup(hssA.A11, hssB.A11)
     Z2 = _matmatup(hssA.A22, hssB.A22)
     return BinaryNode(hssA.W1' * Z1.data * hssB.R1 + hssA.W2' * Z2.data * hssB.R2, Z1, Z2)
@@ -98,8 +98,8 @@ function _matmatdown!(hssA::HssMatrix{T}, hssB::HssMatrix{T}, Z::BinaryNode{Matr
     D = hssA.D * hssB.D + hssA.U * F * hssB.V'
     U = [hssA.U hssA.D * hssB.U]
     V = [hssB.D' * hssA.V hssB.V]
-    return HssMatrix(D, U, V)
-  elseif isbranch(hssA) && isbranch(hssA)
+    return HssMatrix(D, U, V, false)
+  elseif isbranch(hssA) && isbranch(hssB)
     # evaluate cross terms
     F1 = hssA.B12 * Z.right.data * hssB.B21 + hssA.R1 * F * hssB.W1'
     F2 = hssA.B21 * Z.left.data * hssB.B12 + hssA.R2 * F * hssB.W2'
@@ -111,7 +111,7 @@ function _matmatdown!(hssA::HssMatrix{T}, hssB::HssMatrix{T}, Z::BinaryNode{Matr
     W2 = [hssA.W2 zeros(size(hssA.W2,1), size(hssB.W2,2)); hssB.B12' * Z.left.data' * hssA.W1 hssB.W2];
     A11 = _matmatdown!(hssA.A11, hssB.A11, Z.left, F1)
     A22 = _matmatdown!(hssA.A22, hssB.A22, Z.right, F2)
-    return HssMatrix(A11, A22, B12, B21, R1, W1, R2, W2)
+    return HssMatrix(A11, A22, B12, B21, R1, W1, R2, W2, false)
   else
     error("Clusters don't seem to match")
   end

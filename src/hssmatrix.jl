@@ -189,11 +189,11 @@ for op in (:+,:-)
     function $op(hssA::HssMatrix, hssB::HssMatrix)
       size(hssA) == size(hssB) || throw(DimensionMismatch("A has dimensions $(size(hssA)) but B has dimensions $(size(hssB))"))
       if isleaf(hssA) && isleaf(hssB)
-        return HssMatrix($op(hssA.D, hssB.D), [hssA.U hssB.U], [hssA.V hssB.V])
+        return HssMatrix($op(hssA.D, hssB.D), [hssA.U hssB.U], [hssA.V hssB.V], isroot(hssA) && isroot(hssB))
       elseif isbranch(hssA) && isbranch(hssB)
         hssA.sz1 == hssB.sz1 || throw(DimensionMismatch("A11 has dimensions $(hssA.sz1) but B11 has dimensions $(hssB.sz1)"))
         hssA.sz2 == hssB.sz2 || throw(DimensionMismatch("A22 has dimensions $(hssA.sz2) but B22 has dimensions $(hssA.sz2)"))
-        return HssMatrix($op(hssA.A11, hssB.A11), $op(hssA.A22, hssB.A22), blkdiagm(hssA.B12, $op(hssB.B12)), blkdiagm(hssA.B21, $op(hssB.B21)),blkdiagm(hssA.R1, hssB.R1), blkdiagm(hssA.W1, hssB.W1), blkdiagm(hssA.R2, hssB.R2), blkdiagm(hssA.W2, hssB.W2))
+        return HssMatrix($op(hssA.A11, hssB.A11), $op(hssA.A22, hssB.A22), blkdiagm(hssA.B12, $op(hssB.B12)), blkdiagm(hssA.B21, $op(hssB.B21)),blkdiagm(hssA.R1, hssB.R1), blkdiagm(hssA.W1, hssB.W1), blkdiagm(hssA.R2, hssB.R2), blkdiagm(hssA.W2, hssB.W2), isroot(hssA) && isroot(hssB))
       else
         throw(ArgumentError("Cannot add leaves and branches."))
       end
@@ -211,9 +211,9 @@ end
 *(hssA::HssMatrix, a::Number) = *(a, hssA)
 function *(a::Number, hssA::HssMatrix)
   if isleaf(hssA)
-    return HssMatrix(a*hssA.D, hssA.U, hssA.V)
+    return HssMatrix(a*hssA.D, hssA.U, hssA.V, isroot(hssA))
   else
-    return HssMatrix(a*hssA.A11, a*hssA.A22, a*hssA.B12, a*hssA.B21, hssA.R1, hssA.W1, hssA.R2, hssA.W2)
+    return HssMatrix(a*hssA.A11, a*hssA.A22, a*hssA.B12, a*hssA.B21, hssA.R1, hssA.W1, hssA.R2, hssA.W2, isroot(hssA))
   end
 end
 
@@ -295,7 +295,7 @@ end
 # remove leaves on the bottom level
 function prune_leaves!(hssA::HssMatrix)
   if isleaf(hssA.A11) && isleaf(hssA.A22)
-    return HssMatrix(_hssleaf(hssA)...)
+    return HssMatrix(_hssleaf(hssA)..., hssA.rootnode)
   else
     hssA.A11 = prune_leaves!(hssA.A11)
     hssA.A22 = prune_leaves!(hssA.A22)
@@ -306,7 +306,7 @@ end
 # returns D, U and V. replaces _full function
 function _hssleaf(hssA::HssMatrix)
   if isleaf(hssA)
-    return  hssA.D, hssA.U, hssA.V
+    return hssA.D, hssA.U, hssA.V
   else
     A11, U1, V1 = _hssleaf(hssA.A11)
     A22, U2, V2 = _hssleaf(hssA.A22)
