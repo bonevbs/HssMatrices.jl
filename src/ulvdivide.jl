@@ -41,7 +41,9 @@ function _ldiv!(hssA::HssMatrix, hssB::HssMatrix)
     hssQB = hssQB - hssL * hssY0 # multiply triangularized part with solved part and substract from the
     @infiltrate
     hssQB = recompress!(hssQB)
+    @infiltrate
     hssQB = prune_leaves!(hssQB)
+    @infiltrate
 
     # reduce to the remainder block (and regain sqare HSS matrix for recursive division)
     hssL = _extract_ccols(hssL, nk) # extract uncompressed rows to form Matrix with one less level
