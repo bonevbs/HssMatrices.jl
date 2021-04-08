@@ -116,9 +116,9 @@ module HssMatrices
   include("prrqr.jl")
   include("compression.jl")
   include("generators.jl")
-  #include("matmul.jl")
+  include("matmul.jl")
   #include("ulvfactor.jl")
   #include("ulvdivide.jl")
   #include("constructors.jl")
-  #include("visualization.jl")
+  include("visualization.jl")
 end

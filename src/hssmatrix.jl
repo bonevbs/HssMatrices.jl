@@ -232,13 +232,9 @@ function gensize(hssA::HssMatrix)
   end
 end
 
-# # function that returns alternative HssNode acting as rootnode
-# # this makes multiplication etc. safe if we use subblocks of HSS matrices
-# root(hssA::HssLeaf) = hssA
-# function root(hssA::HssNode)
-#   gensize(hssA) == (0, 0) && return hssA
-#   return HssNode(hssA.A11, hssA.A22, hssA.B12, hssA.B21)
-# end
+# function that returns alternative HssNode acting as rootnode
+# this makes multiplication etc. safe if we use subblocks of HSS matrices
+rooted(hssA::HssMatrix) = isleaf(hssA) ? HssMatrix(hssA.D, true) : HssMatrix(hssA.A11, hssA.A22, hssA.B12, hssA.B21, true)
 
 # return a full matrix (hopefully efficient implementation with pre-allocated memory)
 Matrix(hssA::HssMatrix) = full(hssA)
