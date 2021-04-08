@@ -320,8 +320,7 @@ function _checkdims(hssA::HssMatrix, i::Int)
 end
 
 # remove leaves on the bottom level
-prune_leaves!(hssA::HssLeaf) = hssA
-function prune_leaves!(hssA::HssNode)
+function prune_leaves!(hssA::HssMatrix)
   if isleaf(hssA.A11) && isleaf(hssA.A22)
     return HssMatrix(_hssleaf(hssA)...)
   else
