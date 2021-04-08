@@ -9,8 +9,6 @@
 #
 # Written by Boris Bonev, Feb. 2021
 
-using Infiltrator
-
 # function for acess that imitate the behavior in LinearAlgebra.jl
 ldiv!(hssA::HssMatrix, hssB::HssMatrix) = _ldiv!(copy(hssA), hssB)
 # lazy implementation of rdiv!
@@ -29,7 +27,6 @@ function _ldiv!(hssA::HssMatrix, hssB::HssMatrix)
   else
     # bottom-up stage of the ULV solution algorithm
     hssL, QU, QL, QV, mk, nk, ktree  = _ulvfactor_leaves!(hssA, 0)
-    @infiltrate
     hssB = _utransforms!(hssB, QU)
     hssQB = _extract_crows(hssB, nk)
     hssY0 = _ltransforms!(hssB, QL)
@@ -39,11 +36,8 @@ function _ldiv!(hssA::HssMatrix, hssB::HssMatrix)
     # TODO: this still fails if only one hss block gets fully eliminated - fix that!
 
     hssQB = hssQB - hssL * hssY0 # multiply triangularized part with solved part and substract from the
-    @infiltrate
     hssQB = recompress!(hssQB)
-    @infiltrate
     hssQB = prune_leaves!(hssQB)
-    @infiltrate
 
     # reduce to the remainder block (and regain sqare HSS matrix for recursive division)
     hssL = _extract_ccols(hssL, nk) # extract uncompressed rows to form Matrix with one less level

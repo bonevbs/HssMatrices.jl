@@ -119,6 +119,6 @@ module HssMatrices
   include("matmul.jl")
   include("ulvfactor.jl")
   include("ulvdivide.jl")
-  #include("constructors.jl")
+  include("constructors.jl")
   include("visualization.jl")
 end

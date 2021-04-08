@@ -139,7 +139,6 @@ function recompress!(hssA::HssMatrix{T}, opts::HssOptions=HssOptions(T); args...
   rtol = opts.rtol; atol = opts.atol;
 
   if isleaf(hssA); return hssA; end
-  if !isroot(hssA); error("Expected rootnode for recompression"); end
 
   # a prerequisite for this algorithm to work is that generators are orthonormal
   orthonormalize_generators!(hssA)
@@ -152,6 +151,12 @@ function recompress!(hssA::HssMatrix{T}, opts::HssOptions=HssOptions(T); args...
 
   hssA.B12 = S2*Q2
   hssA.B21 = S1*Q1
+
+  # fix dimensions of ghost-translators in rootnode
+  hssA.R1 = hssA.R1[1:size(hssA.B12, 1),:]
+  hssA.W1 = hssA.W1[1:size(hssA.B21, 2),:]
+  hssA.R2 = hssA.R2[1:size(hssA.B21, 1),:]
+  hssA.W2 = hssA.W2[1:size(hssA.B12, 2),:]
 
   # pass information to children and proceed recursively
   if isbranch(hssA.A11)
@@ -385,6 +390,10 @@ function _randcompress!(hssA::HssMatrix, A, Scol::Matrix, Srow::Matrix, Ωcol::M
     if rootnode
       rk1, wk1 = gensize(hssA.A11)
       rk2, wk2 = gensize(hssA.A22)
+      hssA.R1 = Matrix{eltype(hssA)}(undef, rk1, 0)
+      hssA.R2 = Matrix{eltype(hssA)}(undef, rk2, 0)
+      hssA.W1 = Matrix{eltype(hssA)}(undef, wk1, 0)
+      hssA.W2 = Matrix{eltype(hssA)}(undef, wk2, 0)
       hssA.rootnode = true
 
       U = Matrix{eltype(hssA)}(undef, rk1+rk2, 0)
