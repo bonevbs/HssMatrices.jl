@@ -62,10 +62,10 @@ mutable struct HssMatrix{T<:Number} <: AbstractMatrix{T}
 end
 
 # custom constructors which are calling the compression algorithms
-function hss(A::AbstractMatrix, opts::HssOptions=HssOptions(Float64); args...)
+function hss(A::AbstractMatrix, opts=HssOptions(Float64); args...)
   opts = copy(opts; args...)
   chkopts!(opts)
-  hss(A, bisection_cluster(size(A,1), leafsize=opts.leafsize), bisection_cluster(size(A,2), leafsize=opts.leafsize); args...)
+  return hss(A, bisection_cluster(size(A,1), leafsize=opts.leafsize), bisection_cluster(size(A,2), leafsize=opts.leafsize); args...)
 end
 hss(A::Matrix, rcl::ClusterTree, ccl::ClusterTree; args...) = compress(A, rcl, ccl; args...)
 function hss(A::AbstractSparseMatrix, rcl::ClusterTree, ccl::ClusterTree; args...)
@@ -75,7 +75,7 @@ function hss(A::AbstractSparseMatrix, rcl::ClusterTree, ccl::ClusterTree; args..
   m0 = Int(ceil(m/nl))
   n0 = Int(ceil(n/nl))
   kest = max(nnz(A) - nl*m0*n0,0)
-  randcompress_adaptive(A, rcl, ccl; kest = kest, args...)
+  return randcompress_adaptive(A, rcl, ccl; kest=kest, args...)
 end
 hss(A::LinearMap, rcl::ClusterTree, ccl::ClusterTree; args...) = randcompress_adaptive(A, rcl, ccl; args...)
 

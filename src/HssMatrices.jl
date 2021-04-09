@@ -97,7 +97,7 @@ module HssMatrices
     opts.noversampling ≥ 1 || throw(ArgumentError("noversampling"))
   end
 
-  function setopts(opts::HssOptions=HssOptions(Float64); args...)
+  function setopts(opts=HssOptions(Float64); args...)
     opts = copy(opts; args...)
     chkopts!(opts)
     global atol = opts.atol

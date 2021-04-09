@@ -53,7 +53,7 @@ end
 # leaf node function for compression
 function _compress!(A::Matrix{T}, Brow::Matrix{T}, Bcol::Matrix{T}, rows::UnitRange{Int}, cols::UnitRange{Int}, atol::Float64, rtol::Float64; rootnode=false) where T
   if rootnode
-    HssMatrix(A[rows, cols])
+    return HssMatrix(A[rows, cols]), Brow, Bcol
   else
     U, Brow = _compress_block!(Brow, atol, rtol)
     V, Bcol = _compress_block!(Bcol', atol, rtol) #TODO: write code that is better at dealing with Julia's lazy transpose
@@ -113,9 +113,9 @@ function _compress!(A::Matrix{T}, Brow::Matrix{T}, Bcol::Matrix{T}, rcl::Cluster
     W1 = W[1:rn1, :]
     W2 = W[rn1+1:end, :]
     
-    hssA = HssMatrix(A11, A22, B12, B21, R1, W1, R2, W2)
+    hssA = HssMatrix(A11, A22, B12, B21, R1, W1, R2, W2, rootnode)
   else
-    hssA = HssMatrix(A11, A22, B12, B21)
+    hssA = HssMatrix(A11, A22, B12, B21, rootnode)
   end
   return hssA, Brow, Bcol
 end
@@ -297,7 +297,7 @@ Randomized HSS compression.
 julia> hssA = randcompress_adaptive(A, rcl, ccl, kest=20)
 ```
 """
-function randcompress_adaptive(A::AbstractMatOrLinOp{T}, rcl::ClusterTree, ccl::ClusterTree, opts::HssOptions=HssOptions(T); kest=10, args...) where T
+function randcompress_adaptive(A::AbstractMatOrLinOp{T}, rcl::ClusterTree, ccl::ClusterTree, opts=HssOptions(T); kest=10, args...) where T
   opts = copy(opts; args...)
   chkopts!(opts)
   m, n = size(A)
@@ -343,12 +343,12 @@ function randcompress_adaptive(A::AbstractMatOrLinOp{T}, rcl::ClusterTree, ccl::
 end
 
 # this function compresses given the sampling matrix of rank k
-function _randcompress!(hssA::HssMatrix, A, Scol::Matrix, Srow::Matrix, Ωcol::Matrix, Ωrow::Matrix, ro::Int, co::Int, atol::Float64, rtol::Float64; rootnode=false)
+function _randcompress!(hssA::HssMatrix, A::AbstractMatOrLinOp, Scol::Matrix, Srow::Matrix, Ωcol::Matrix, Ωrow::Matrix, ro::Int, co::Int, atol::Float64, rtol::Float64; rootnode=false)
   if isleaf(hssA)
     Scol .= Scol .- hssA.D * Ωcol
     Srow .= Srow .- hssA.D' * Ωrow
 
-    if rootnode return hssA end
+    #if rootnode return hssA, Scol, Srow, Ωcol, Ωrow, Jcol, Jrow, hssA.U, hssA.V  end
 
     # take care of column-space
     Xcol, Jcol = _interpolate(Scol', atol, rtol)
@@ -363,8 +363,6 @@ function _randcompress!(hssA::HssMatrix, A, Scol::Matrix, Srow::Matrix, Ωcol::M
     Srow = Srow[Jrow, :]
     V = Xrow'
     Jrow .= co .+ Jrow
-
-    return hssA, Scol, Srow, Ωcol, Ωrow, Jcol, Jrow, U, V 
   else
     m1, n1 = hssA.sz1; m2, n2 = hssA.sz2
     hssA.A11, Scol1, Srow1, Ωcol1, Ωrow1, Jcol1, Jrow1, U1, V1 = _randcompress!(hssA.A11, A, Scol[1:m1, :], Srow[1:n1, :], Ωcol[1:n1, :], Ωrow[1:m1, :], ro, co, atol, rtol)
@@ -396,10 +394,8 @@ function _randcompress!(hssA::HssMatrix, A, Scol::Matrix, Srow::Matrix, Ωcol::M
       hssA.W2 = Matrix{eltype(hssA)}(undef, wk2, 0)
       hssA.rootnode = true
 
-      U = Matrix{eltype(hssA)}(undef, rk1+rk2, 0)
-      V = Matrix{eltype(hssA)}(undef, wk1+wk2, 0)
-
-      return hssA, Scol, Srow, Ωcol, Ωrow, Jcol, Jrow, U, V
+      U = similar(U1, rk1+rk2, 0)
+      V = similar(V1, wk1+wk2, 0)
     else
       # take care of the columns
       Xcol, Jcolloc = _interpolate(Scol', atol, rtol)
@@ -416,22 +412,21 @@ function _randcompress!(hssA::HssMatrix, A, Scol::Matrix, Srow::Matrix, Ωcol::M
       Srow = Srow[Jrowloc, :]
       Jrow = Jrow[Jrowloc]
       V = [hssA.W1; hssA.W2]
-
-      return hssA, Scol, Srow, Ωcol, Ωrow, Jcol, Jrow, U, V
     end
   end
+  return hssA, Scol, Srow, Ωcol, Ωrow, Jcol, Jrow, U, V
 end
 
 # interpolative decomposition
 # still gotta figure out which qr decomposition to use
 function _interpolate(A::AbstractMatrix{T}, atol::Float64, rtol::Float64) where T
-  size(A,2) == 0 && return Matrix{T}(undef, 0,0), []
+  size(A,2) == 0 && return Matrix{eltype(A)}(undef, 0, 0), Vector{Int}()
   #_, R, p = prrqr(A, tol; reltol=reltol)
   #rk = min(size(R)...)
   _, R, p  = qr(A, Val(true))
   tol = min( atol, rtol * abs(R[1,1]) )
   rk = sum(abs.(diag(R)) .> tol)
-  J = p[1:rk];
+  J = p[1:rk]
   X = R[1:rk, 1:rk]\R[1:rk,invperm(p)]
   return X, J
 end
