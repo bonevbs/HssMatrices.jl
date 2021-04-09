@@ -22,7 +22,7 @@ end
 
 # recursive function to compute the generators corresponding to this subblock
 function generators(hssA::HssMatrix)
-  rootnode(hssA) && error("Ambiguous call to generators on rootnode")
+  isroot(hssA) && error("Ambiguous call to generators on rootnode")
   if isleaf(hssA)
     return hssA.U, hssA.V
   else
