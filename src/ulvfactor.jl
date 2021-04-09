@@ -7,12 +7,15 @@
 # Written by Boris Bonev, Nov. 2020
 
 ## function for direct solution using the implicit ULV factorization
-ulvfactsolve(hssA::HssLeaf{T}, b::Matrix{T}) where T = hssA.D\b
-function ulvfactsolve(hssA::HssNode{T}, b::Matrix{T}) where T
-  z = zeros(size(hssA,2), size(b,2))
-  _, _, _, _, _, _, _, QV = _ulvfactsolve!(hssA, b, z, 0; rootnode=true)
-  z = _ulvfactsolve_topdown!(QV, z)
-  return z
+function ulvfactsolve(hssA::HssMatrix{T}, b::Matrix{T}) where T
+  if isleaf(hssA)
+    return hssA.D\b
+  else
+    z = zeros(size(hssA,2), size(b,2))
+    _, _, _, _, _, _, _, QV = _ulvfactsolve!(hssA, b, z, 0; rootnode=true)
+    z = _ulvfactsolve_topdown!(QV, z)
+    return z
+  end
 end
 
 # core routine to reduce the rows and triangularize the diagonal block via QR/LQ decompositions and immediately apply them to b
@@ -54,41 +57,41 @@ function _ulvreduce!(D::Matrix{T}, U::Matrix{T}, V::Matrix{T}, b::Matrix{T}) whe
 end
 
 # tree traversal that handles the hierarchical ULV factorization
-function _ulvfactsolve!(hssA::HssLeaf{T}, b::Matrix{T}, z::Matrix{T}, co::Int; rootnode=false) where T
-  cols = collect(co .+ (1:size(hssA,2)))
-  D = copy(hssA.D); U = copy(hssA.U); V = copy(hssA.V)
-  D, U, V, b, zloc, u, mk, nk, lqf =_ulvreduce!(D, U, V, b)
-  z[cols[1:mk], :] = zloc
-  QV = BinaryNode((cols, lqf...))
-  return b, u, D, U, V, cols, nk, QV 
-end
-function _ulvfactsolve!(hssA::HssNode{T}, b::Matrix{T}, z::Matrix{T}, co::Int; rootnode=false) where T
-  m1, n1 = hssA.sz1; m2, n2 = hssA.sz2
-  b1 = b[1:m1, :]; b2 = b[m1+1:end, :] # performance could be further improved by getting rid of those allocations
-  b1, u1, D1, U1, V1, cols1, nk1, QV1 = _ulvfactsolve!(hssA.A11, b1, z, co)
-  b2, u2, D2, U2, V2, cols2, nk2, QV2 = _ulvfactsolve!(hssA.A22, b2, z, co+n1)
-
-  # merge nodes to form new diagonal block 
-  b = [b1; b2] .- [U1*hssA.B12*u2; U2*hssA.B21*u1]
-  D = [D1 U1*hssA.B12*V2'; U2*hssA.B21*V1' D2]
-  cols = [cols1[nk1+1:end]; cols2[nk2+1:end]] # to re-adjust local numbering
-
-  U = [U1*hssA.R1; U2*hssA.R2]
-  V = [V1*hssA.W1; V2*hssA.W2]
-
-  # now if this is the rootnode we should directly solve?
-  if rootnode
-    z[cols, :] = D\b
-    u = Matrix{T}(undef,0,size(b,2))
-    mk, nk = size(D)
-    QV = BinaryNode{Tuple{Vector{Int}, Matrix{T}, Vector{T}}}()
-  else
-    D, U, V, b, zloc, u, mk, nk, lqf = _ulvreduce!(D, U, V, b)
-    u .= u .+ hssA.W1'*u1 .+ hssA.W2'*u2
+function _ulvfactsolve!(hssA::HssMatrix{T}, b::Matrix{T}, z::Matrix{T}, co::Int; rootnode=false) where T
+  if isleaf(hssA)
+    cols = collect(co .+ (1:size(hssA,2)))
+    D = copy(hssA.D); U = copy(hssA.U); V = copy(hssA.V)
+    D, U, V, b, zloc, u, mk, nk, lqf =_ulvreduce!(D, U, V, b)
     z[cols[1:mk], :] = zloc
     QV = BinaryNode((cols, lqf...))
+  else
+    m1, n1 = hssA.sz1; m2, n2 = hssA.sz2
+    b1 = b[1:m1, :]; b2 = b[m1+1:end, :] # performance could be further improved by getting rid of those allocations
+    b1, u1, D1, U1, V1, cols1, nk1, QV1 = _ulvfactsolve!(hssA.A11, b1, z, co)
+    b2, u2, D2, U2, V2, cols2, nk2, QV2 = _ulvfactsolve!(hssA.A22, b2, z, co+n1)
+
+    # merge nodes to form new diagonal block 
+    b = [b1; b2] .- [U1*hssA.B12*u2; U2*hssA.B21*u1]
+    D = [D1 U1*hssA.B12*V2'; U2*hssA.B21*V1' D2]
+    cols = [cols1[nk1+1:end]; cols2[nk2+1:end]] # to re-adjust local numbering
+
+    U = [U1*hssA.R1; U2*hssA.R2]
+    V = [V1*hssA.W1; V2*hssA.W2]
+
+    # now if this is the rootnode we should directly solve?
+    if rootnode
+      z[cols, :] = D\b
+      u = Matrix{T}(undef,0,size(b,2))
+      mk, nk = size(D)
+      QV = BinaryNode{Tuple{Vector{Int}, Matrix{T}, Vector{T}}}()
+    else
+      D, U, V, b, zloc, u, mk, nk, lqf = _ulvreduce!(D, U, V, b)
+      u .= u .+ hssA.W1'*u1 .+ hssA.W2'*u2
+      z[cols[1:mk], :] = zloc
+      QV = BinaryNode((cols, lqf...))
+    end
+    QV.left = QV1; QV.right = QV2
   end
-  QV.left = QV1; QV.right = QV2
   return b, u, D, U, V, cols, nk, QV 
 end
 

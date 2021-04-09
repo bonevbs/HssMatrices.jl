@@ -34,7 +34,7 @@ module HssMatrices
   # linearmap.jl
   export LinearMap, HermitianLinearMap
   # hssmatrix.jl
-  export HssLeaf, HssNode, HssMatrix, hss, isleaf, isbranch, ishss, hssrank, full, checkdims, prune_leaves!, blkdiagm
+  export HssMatrix, hss, isleaf, isbranch, ishss, hssrank, full, checkdims, prune_leaves!, blkdiagm
   # prrqr.jl
   export prrqr, prrqr!
   # compression.jl
@@ -97,7 +97,7 @@ module HssMatrices
     opts.noversampling ≥ 1 || throw(ArgumentError("noversampling"))
   end
 
-  function setopts(opts::HssOptions=HssOptions(Float64); args...)
+  function setopts(opts=HssOptions(Float64); args...)
     opts = copy(opts; args...)
     chkopts!(opts)
     global atol = opts.atol
