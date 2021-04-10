@@ -43,8 +43,8 @@ mutable struct HssMatrix{T<:Number} <: AbstractMatrix{T}
     hssA.A11 = A11; hssA.A22 = A22
     hssA.B12 = B12; hssA.B21 = B21
     hssA.sz1 = size(A11); hssA.sz2 = size(A22)
-    hssA.R1 = Matrix{Float64}(undef,kr1,0); hssA.W1 = Matrix{Float64}(undef,kw1,0)
-    hssA.R2 = Matrix{Float64}(undef,kr2,0); hssA.W2 = Matrix{Float64}(undef,kw2,0)
+    hssA.R1 = Matrix{T}(undef,kr1,0); hssA.W1 = Matrix{T}(undef,kw1,0)
+    hssA.R2 = Matrix{T}(undef,kr2,0); hssA.W2 = Matrix{T}(undef,kw2,0)
     return hssA
   end
   function HssMatrix(A11::HssMatrix{T}, A22::HssMatrix{T}, B12::AbstractMatrix{T}, B21::AbstractMatrix{T}, 

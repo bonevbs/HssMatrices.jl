@@ -447,7 +447,7 @@ function hss_blkdiag(A::AbstractMatOrLinOp{T}, rcl::ClusterTree, ccl::ClusterTre
     B12 = Matrix{T}(undef,0,0)
     B21 = Matrix{T}(undef,0,0)
     if rootnode
-      return HssMatrix(A11, A22, B12, B21)
+      return HssMatrix(A11, A22, B12, B21, true)
     else
       R1 = Matrix{T}(undef,0,0)
       W1 = Matrix{T}(undef,0,0)
