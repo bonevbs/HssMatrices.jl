@@ -29,27 +29,27 @@ HssMatrices.setopts!(leafsize=64)
 ### Compression/Recompression
 But what if you want to choose the compression algorithm yourself? Instead of calling `hss`, HssMatrices provides access to deterministic and randomized HSS compression routines, as well as the recompression routine. In order to call these, we first have to specify a clustering of the degrees of freedom. We provide the function `bisection_cluster`, to form a cluster tree of the degrees of freedom. If we use [AbstractTrees.jl](https://github.com/JuliaCollections/AbstractTrees.jl), we can also print them with `print_tree`:
 ```Julia
-  using AbstractTrees
-  cl = bisection_cluster(1:m, leafsize=32)
-  print_tree(cl)
+using AbstractTrees
+cl = bisection_cluster(1:m, leafsize=32)
+print_tree(cl)
 ```
 Once we have created row- and column-clusters, we can move on to compress our matrix. Direct compression can be achieved by calling `compress`:
 ```Julia
-  rcl = bisection_cluster(1:m)
-  rcl = bisection_cluster(1:n)
-  hssA = compress(A, rcl, ccl, atol=1e-9, rtol=1e-9)
+rcl = bisection_cluster(1:m)
+rcl = bisection_cluster(1:n)
+hssA = compress(A, rcl, ccl, atol=1e-9, rtol=1e-9)
 ```
 The tolerances in HssMatrices are handled in a way that the algorithms stop once either the absolute norm is below `atol` or once the relative norm is below `rtol`. In order to enforce that only one of the two criteria is met, we can set the other criterion to 0.
 
 Apart from the direct compression routine, HssMatrices also implements the randomized compression routine developed by Per-Gunnar Martinsson. We can call this routine by either calling `randcompress` or `randcompress_adaptive`. The latter starts with a rank estimate of `kest=10` and increases the estimated rank of the random sampling until the estimate of the norm is below the respective tolerance.
 ```Julia
-  hssB = randcompress(A, rcl, ccl, kest=10);
-  hssB = randcompress_adaptive(A, rcl, ccl);
+hssB = randcompress(A, rcl, ccl, kest=10);
+hssB = randcompress_adaptive(A, rcl, ccl);
 ```
 It is often useful to be able to call this indirect compression matrix without explicitly constructing a matrix. To this end, HssMatrices implements the `LinearMap`, type which is derived from the `LinearOperator` type defined in LowRankApproximation.jl. This type contains two functions for multiplication with the matrix and it's routine respectively, as well as one function for accessing individual indices of the `LinearMap`.
 ```Julia
 Id(i,j) = Matrix{Float64}(i.*ones(length(j))' .== ones(length(i)).*j')
-IdOp = LinearMap{Float64}(n, n, (y,_,x) -> x, (y,_,x) -> x, (i,j) -> Id(i,j), nothing)
+IdOp = LinearMap{Float64}(n, n, (y,_,x) -> x, (y,_,x) -> x, (i,j) -> Id(i,j))
 hssI = randcompress(IdOp, ccl, ccl, 0)
 ```
 
@@ -62,29 +62,29 @@ All compression is handled in the sense that individual HSS block rows and colum
 
 It can also be useful to construct HSS matrices from specific datastructures. For instance, we can construct an HSS matrix from a low-rank matrix in the following fashion:
 ```Julia
-  U = randn(m, k); V = randn(n,k)
-  rcl = bisection_cluster(1:m, lsz)
-  ccl = bisection_cluster(1:n, lsz)
-  hssA = lowrank2hss(U, V, rcl, ccl)
+U = randn(m, k); V = randn(n,k)
+rcl = bisection_cluster(1:m, lsz)
+ccl = bisection_cluster(1:n, lsz)
+hssA = lowrank2hss(U, V, rcl, ccl)
 ```
 
 ### Efficient HSS multiplication and division (inversion)
 Of course we can now perform some arithmetic using HSS matrices. HssMatrices implements fast multiplication with dense and HSS matrices as well as fast solution of linear systems via the ULV factorization.
 ```Julia
-  hssA*x
-  hssA\x
+hssA*x
+hssA\x
 ```
 These operations will automatically call the right routines for fast multiplication and fast matrix division. Moreover, we can also use HSS arithmetic to multiply Hss matrices with eachother and use left/right division on them:
 ```Julia
-  hssA+hssB
-  hssA-hssB
-  hssA*hssB
-  hssA\hssB
-  hssA/hssB
+hssA+hssB
+hssA-hssB
+hssA*hssB
+hssA\hssB
+hssA/hssB
 ```
 Do not forget to call recompression in order to keep the ranks low!
 ```Julia
-  recompress!(hssA)
+recompress!(hssA)
 ```
 ### Convenience routines
 We can also have a look at the generators and extract them via
