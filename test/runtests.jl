@@ -47,7 +47,7 @@ end;
     rhs = randn(n, 5); x = hssA\rhs; x0 = A\rhs;
     @test norm(x0 - x)/norm(x0) ≤ c*HssOptions().rtol || norm(x0 - x) ≤ c*HssOptions().atol
     Id(i,j) = Matrix{Float64}(i.*ones(length(j))' .== ones(length(i)).*j')
-    IdOp = LinearMap{Float64}(n, n, (y,_,x) -> x, (y,_,x) -> x, (i,j) -> Id(i,j), nothing)
+    IdOp = LinearMap{Float64}(n, n, (y,_,x) -> x, (y,_,x) -> x, (i,j) -> Id(i,j))
     hssI = randcompress(IdOp, ccl, ccl, 0)
     @test norm(full(hssA*hssI) - full(hssA))/norm(full(hssA)) ≤ c*eps()
     Ainv = inv(A)
