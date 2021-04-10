@@ -47,7 +47,7 @@ println("abs. error in the solution of Ax = b: ", norm(x-xcor))
 
 # test left HSS division
 Id(i,j) = Matrix{Float64}(i.*ones(length(j))' .== ones(length(i)).*j')
-IdOp = LinearMap{Float64}(n, n, (y,_,x) -> x, (y,_,x) -> x, (i,j) -> Id(i,j), nothing)
+IdOp = LinearMap{Float64}(n, n, (y,_,x) -> x, (y,_,x) -> x, (i,j) -> Id(i,j))
 hssI = randcompress(IdOp, ccl, ccl, 0)
 hssC = ldiv!(hssA, hssI)
 println("rel. error in the solution of AX = I: ", norm(full(hssC) - inv(A)) / norm(inv(A)) )
@@ -55,7 +55,7 @@ println("abs. error in the solution of AX = I: ", norm(full(hssC) - inv(A)) )
 
 # test left HSS division
 Id(i,j) = Matrix{Float64}(i.*ones(length(j))' .== ones(length(i)).*j')
-IdOp = LinearMap{Float64}(n, n, (y,_,x) -> x, (y,_,x) -> x, (i,j) -> Id(i,j), nothing)
+IdOp = LinearMap{Float64}(n, n, (y,_,x) -> x, (y,_,x) -> x, (i,j) -> Id(i,j))
 hssI = randcompress(IdOp, ccl, ccl, 0)
 hssC = rdiv!(hssI, hssA)
 println("rel. error in the solution of XA = I: ", norm(full(hssC) - inv(A)) / norm(inv(A)) )
@@ -80,6 +80,3 @@ println("abs. error in the solution of XA = I: ", norm(full(hssC) - inv(A)) )
 
 # # test plotting
 # plot = plotranks(hssA)
-
-### TODO
-# clean up the library Definitions

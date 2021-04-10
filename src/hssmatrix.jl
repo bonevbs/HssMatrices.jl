@@ -27,14 +27,14 @@ mutable struct HssMatrix{T<:Number} <: AbstractMatrix{T}
   W2 ::Matrix{T}
 
   # internal constructors for leaf nodes
-  function HssMatrix(D::Matrix{T}, rootnode=true) where T
+  function HssMatrix(D::AbstractMatrix{T}, rootnode=true) where T
     m, n = size(D)
-    new{T}(true, rootnode, D, Matrix{T}(undef, m, 0), Matrix{T}(undef, n, 0))
+    return new{T}(true, rootnode, D, Matrix{T}(undef, m, 0), Matrix{T}(undef, n, 0))
   end
   function HssMatrix(D::AbstractMatrix{T}, U::AbstractMatrix{T}, V::AbstractMatrix{T}, rootnode=false) where T
     if size(D,1) != size(U,1) throw(ArgumentError("D and U must have same number of rows")) end
     if size(D,2) != size(V,1) throw(ArgumentError("D and V must have same number of columns")) end
-    new{T}(true, rootnode, D, U, V)
+    return new{T}(true, rootnode, D, U, V)
   end
   # internal constructors for branch nodes
   function HssMatrix(A11::HssMatrix{T}, A22::HssMatrix{T}, B12::AbstractMatrix{T}, B21::AbstractMatrix{T}, rootnode=true) where T

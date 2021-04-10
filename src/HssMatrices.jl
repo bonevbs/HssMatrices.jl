@@ -35,8 +35,6 @@ module HssMatrices
   export LinearMap, HermitianLinearMap
   # hssmatrix.jl
   export HssMatrix, hss, isleaf, isbranch, ishss, hssrank, full, checkdims, prune_leaves!, blkdiagm
-  # prrqr.jl
-  export prrqr, prrqr!
   # compression.jl
   export compress, randcompress, randcompress_adaptive, recompress!, hss_blkdiag
   # generators.jl  
@@ -113,7 +111,6 @@ module HssMatrices
   include("clustertree.jl")
   include("linearmap.jl")
   include("hssmatrix.jl")
-  include("prrqr.jl")
   include("compression.jl")
   include("generators.jl")
   include("matmul.jl")

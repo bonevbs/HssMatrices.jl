@@ -17,6 +17,18 @@
 #
 # Re-Written by Boris Bonev, Jan. 2021
 
+
+# Utility routine to provide access to pivoted rank-revealing qr
+function _compress_block!(A::AbstractMatrix{T}, atol::Float64, rtol::Float64) where T
+  #Q, R, p = prrqr!(A, atol, rtol)
+  #rk = min(size(R)...)
+  #return Q[:,1:rk], R[1:rk, invperm(p)]
+  # temporarily using prrqr of LowRankApprox.jl - may be replaced in the future to reduce dependencies
+  F = pqrfact(A; atol = atol, rtol = rtol, sketch=:none, pqrfact_retval = "qr")
+  #rk = min(size(F.R)...)
+  return F.Q, F.R[:, invperm(F.p)]
+end
+
 """
   compress(A, rcl, ccl; args...)
 
@@ -435,11 +447,12 @@ end
 function hss_blkdiag(A::AbstractMatOrLinOp{T}, rcl::ClusterTree, ccl::ClusterTree; rootnode=true) where T
   m = length(rcl.data); n = length(ccl.data)
   if isleaf(rcl) # only check row cluster as we have already checked cluster equality
+    
     D = convert(Matrix{T}, A[rcl.data, ccl.data])
     if rootnode
-      return HssMatrix(D)
+      hssA = HssMatrix(D)
     else
-      return HssMatrix(D, Matrix{T}(undef,m,0), Matrix{T}(undef,n,0))
+      hssA = HssMatrix(D, Matrix{T}(undef,m,0), Matrix{T}(undef,n,0))
     end
   elseif isbranch(rcl)
     A11 = hss_blkdiag(A, rcl.left, ccl.left; rootnode=false)
@@ -447,15 +460,16 @@ function hss_blkdiag(A::AbstractMatOrLinOp{T}, rcl::ClusterTree, ccl::ClusterTre
     B12 = Matrix{T}(undef,0,0)
     B21 = Matrix{T}(undef,0,0)
     if rootnode
-      return HssMatrix(A11, A22, B12, B21, true)
+      hssA = HssMatrix(A11, A22, B12, B21, true)
     else
       R1 = Matrix{T}(undef,0,0)
       W1 = Matrix{T}(undef,0,0)
       R2 = Matrix{T}(undef,0,0)
       W2 = Matrix{T}(undef,0,0)
-      return HssMatrix(A11, A22, B12, B21, R1, W1, R2, W2)
+      hssA = HssMatrix(A11, A22, B12, B21, R1, W1, R2, W2, )
     end
   else
     throw(ErrorException("Encountered node with only one child. Make sure that each node in the binary tree has either two children or is a leaf."))
   end
+  return hssA
 end
