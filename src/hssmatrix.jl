@@ -176,7 +176,30 @@ end
 # Define Matlab-like convenience functions, which are used throughout the library
 #blkdiagm(A::Matrix, B::Matrix) = [A zeros(size(A,1), size(B,2)); zeros(size(B,1), size(A,2)) B]
 #blkdiagm(A::Matrix... ) = blkdiagm(A[1], blkdiagm(A[2:end]...))
-blkdiagm(A::Matrix...) = cat(A[1:end]..., dims=(1,2))
+#blkdiagm(A::Matrix{T}...) where T = cat(A[1:end]..., dims=(1,2))
+
+function blkdiagm(As::Matrix{T}...) where T
+  # pre-allocate memory
+  m = 0; n = 0
+  for A in As
+    m = m + size(A,1)
+    n = n + size(A,2)
+  end
+  #B = similar(As[1], m, n)
+  B = zeros(T, m, n)
+  ro = 0; co = 0
+  @simd for A in As
+    m, n = size(A)
+    @simd for j in 1:n
+      @simd for i in 1:m
+        @inbounds B[ro+i, co+j] = A[i, j]
+      end
+    end
+    ro = ro + m
+    co = co + n
+  end
+  return B
+end
 
 ## basic algebraic operations (taken and modified from LowRankApprox.jl)
 for op in (:+,:-)
