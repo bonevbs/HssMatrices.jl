@@ -1,7 +1,13 @@
 ### Definitions of datastructures and basic constructors and operators
 # Written by Boris Bonev, Jan. 2021
 
-## new datastructure which is the old datastructure
+"""
+    HssMatrix{T<:Number} <: AbstractMatrix{T}
+    
+Matrix type for storing hierarchically semi-separable matrices.
+These matrices can be constructed via the smart contructor [`hss`](@ref) function or
+the compression methods [`compress`](@ref), [`randcompress`](@ref) and [`randcompress_adaptive`](@ref)
+"""
 mutable struct HssMatrix{T<:Number} <: AbstractMatrix{T}
   # toggles for the type of node
   leafnode::Bool
