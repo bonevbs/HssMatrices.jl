@@ -323,7 +323,9 @@ end
 
 # remove leaves on the bottom level
 function prune_leaves!(hssA::HssMatrix)
-  if isleaf(hssA.A11) && isleaf(hssA.A22)
+  if isleaf(hssA)
+    return hssA
+  elseif isleaf(hssA.A11) && isleaf(hssA.A22)
     return HssMatrix(_hssleaf(hssA)..., hssA.rootnode)
   else
     hssA.A11 = prune_leaves!(hssA.A11)
