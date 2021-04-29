@@ -191,8 +191,8 @@ function _unpackadd_rows!(hssA::HssMatrix{T}, hssB::HssMatrix{T}, ktree::BinaryN
 
       hssA.A11 = _unpackadd_rows!(hssA.A11, hssB.A11, ktree.left)
       hssA.A22 = _unpackadd_rows!(hssA.A22, hssB.A22, ktree.right)
-      hssA.sz1 == size(hssA.A11) || error("Didn't expect dimensions to change")
-      hssA.sz2 == size(hssA.A22) || error("Didn't expect dimensions to change")
+      hssA.sz1 == size(hssA.A11) || error("dimensions got screwed up!")
+      hssA.sz2 == size(hssA.A22) || error("dimensions got screwed up!")
     else
       isbranch(ktree) || throw(ArgumentError("didn't expect ktree to be a leaf node"))
       k1 = ktree.left.data; k2 = ktree.right.data
@@ -218,7 +218,17 @@ function _unpackadd_rows!(hssA::HssMatrix{T}, hssB::HssMatrix{T}, ktree::BinaryN
     end
     return hssA
   else
-    error("Expected hssA to be a branch node")
+    if isbranch(hssB)
+      error("Something went wrong. Expected hssB to also be a leaf node")
+    else
+      k, rk = size(hssB.U);
+      k <= size(hssA,1) || throw(DimensionMismatch("expected hssB to have less rows than hssA."))
+      hssA.U = [hssA.U zeros(size(hssA.U,1), rk)]
+      hssA.U[end-k+1:end, end-rk+1:end] .= hssB.U
+      hssA.V = [hssA.V hssB.V]
+      hssA.D[end-k+1:end, :] .= hssA.D[end-k+1:end, :] .+ hssB.D
+      return hssA
+    end
   end
 end
 

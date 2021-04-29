@@ -8,6 +8,7 @@ using Plots
 K(x,y) = (x-y) > 0 ? 0.001/(x-y) : 2.
 #K(x,y) = (x-y) != 0 ? 1/(x-y) : 1.
 A = [ K(x,y) for x=-1:0.001:1, y=-1:0.001:1];
+C = inv(A);
 
 # test the simple implementation of cluster trees
 m, n = size(A)
@@ -50,16 +51,24 @@ Id(i,j) = Matrix{Float64}(i.*ones(length(j))' .== ones(length(i)).*j')
 IdOp = LinearMap{Float64}(n, n, (y,_,x) -> x, (y,_,x) -> x, (i,j) -> Id(i,j))
 hssI = randcompress(IdOp, ccl, ccl, 0)
 hssC = ldiv!(hssA, hssI)
-println("rel. error in the solution of AX = I: ", norm(full(hssC) - inv(A)) / norm(inv(A)) )
-println("abs. error in the solution of AX = I: ", norm(full(hssC) - inv(A)) )
+println("rel. error in the solution of AX = I: ", norm(full(hssC) - C) / norm(C) )
+println("abs. error in the solution of AX = I: ", norm(full(hssC) - C) )
 
 # test left HSS division
 Id(i,j) = Matrix{Float64}(i.*ones(length(j))' .== ones(length(i)).*j')
 IdOp = LinearMap{Float64}(n, n, (y,_,x) -> x, (y,_,x) -> x, (i,j) -> Id(i,j))
 hssI = randcompress(IdOp, ccl, ccl, 0)
 hssC = rdiv!(hssI, hssA)
-println("rel. error in the solution of XA = I: ", norm(full(hssC) - inv(A)) / norm(inv(A)) )
-println("abs. error in the solution of XA = I: ", norm(full(hssC) - inv(A)) )
+println("rel. error in the solution of XA = I: ", norm(full(hssC) - C) / norm(C) )
+println("abs. error in the solution of XA = I: ", norm(full(hssC) - C) )
+
+# desequilibrate cluster trees and try again
+hssA.A11 = prune_leaves!(hssA.A11)
+hssI = randcompress(IdOp, ccl, ccl, 0)
+hssI.A11 = prune_leaves!(hssI.A11)
+hssC = ldiv!(hssA, hssI)
+println("rel. error in the solution of XA = I: ", norm(full(hssC) - C) / norm(C) )
+println("abs. error in the solution of XA = I: ", norm(full(hssC) - C) )
 
 
 # # test computation of generators
