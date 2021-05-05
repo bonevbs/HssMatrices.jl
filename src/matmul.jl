@@ -103,12 +103,12 @@ function _matmatdown!(hssA::HssMatrix{T}, hssB::HssMatrix{T}, Z::BinaryNode{Matr
     # evaluate cross terms
     F1 = hssA.B12 * Z.right.data * hssB.B21 + hssA.R1 * F * hssB.W1'
     F2 = hssA.B21 * Z.left.data * hssB.B12 + hssA.R2 * F * hssB.W2'
-    B12 = [hssA.B12 hssA.R1 * F * hssB.W2'; zeros(size(hssB.B12, 1), size(hssA.B12,2)) hssB.B12]
-    B21 = [hssA.B21 hssA.R2 * F * hssB.W1'; zeros(size(hssB.B21, 1), size(hssA.B21,2)) hssB.B21]
-    R1 = [hssA.R1 hssA.B12 * Z.right.data * hssB.R2; zeros(size(hssB.R1,1), size(hssA.R1,2)) hssB.R1];
-    W1 = [hssA.W1 zeros(size(hssA.W1,1), size(hssB.W1,2)); hssB.B21' * Z.right.data' * hssA.W2 hssB.W1];
-    R2 = [hssA.R2 hssA.B21 * Z.left.data * hssB.R1; zeros(size(hssB.R2,1), size(hssA.R2,2)) hssB.R2];
-    W2 = [hssA.W2 zeros(size(hssA.W2,1), size(hssB.W2,2)); hssB.B12' * Z.left.data' * hssA.W1 hssB.W2];
+    B12 = [hssA.B12 hssA.R1 * F * hssB.W2'; zeros(T,size(hssB.B12, 1), size(hssA.B12,2)) hssB.B12]
+    B21 = [hssA.B21 hssA.R2 * F * hssB.W1'; zeros(T,size(hssB.B21, 1), size(hssA.B21,2)) hssB.B21]
+    R1 = [hssA.R1 hssA.B12 * Z.right.data * hssB.R2; zeros(T,size(hssB.R1,1), size(hssA.R1,2)) hssB.R1];
+    W1 = [hssA.W1 zeros(T,size(hssA.W1,1), size(hssB.W1,2)); hssB.B21' * Z.right.data' * hssA.W2 hssB.W1];
+    R2 = [hssA.R2 hssA.B21 * Z.left.data * hssB.R1; zeros(T,size(hssB.R2,1), size(hssA.R2,2)) hssB.R2];
+    W2 = [hssA.W2 zeros(T,size(hssA.W2,1), size(hssB.W2,2)); hssB.B12' * Z.left.data' * hssA.W1 hssB.W2];
     A11 = _matmatdown!(hssA.A11, hssB.A11, Z.left, F1)
     A22 = _matmatdown!(hssA.A22, hssB.A22, Z.right, F2)
     return HssMatrix(A11, A22, B12, B21, R1, W1, R2, W2, false)
