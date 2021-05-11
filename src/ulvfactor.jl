@@ -11,7 +11,7 @@ function ulvfactsolve(hssA::HssMatrix{T}, b::Matrix{T}) where T
   if isleaf(hssA)
     return hssA.D\b
   else
-    z = zeros(size(hssA,2), size(b,2))
+    z = zeros(T, size(hssA,2), size(b,2))
     _, _, _, _, _, _, _, QV = _ulvfactsolve!(hssA, b, z, 0; rootnode=true)
     z = _ulvfactsolve_topdown!(QV, z)
     return z
@@ -45,7 +45,7 @@ function _ulvreduce!(D::Matrix{T}, U::Matrix{T}, V::Matrix{T}, b::Matrix{T}) whe
     L1 = tril(lqf[1])
     L1 = L1[:,1:nk]
     L2 = ormlq!('R', adj, lqf..., D[end-k+1:end,:]) # update the bottom block of the diagonal block
-    zloc = trsm('L', 'L', 'N', 'N', 1., L1, b[ind,:])
+    zloc = trsm('L', 'L', 'N', 'N', T(1), L1, b[ind,:])
     b = b[cind, :] .- L2[:,1:nk] * zloc # remove contribution in the uncompressed parts
     V = ormlq!('L', 'N', lqf..., V) # compute the updated off-diagonal generators on the right
     u = V[ind,:]' * zloc # compute update vector to be passed on
