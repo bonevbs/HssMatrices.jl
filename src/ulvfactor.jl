@@ -7,12 +7,12 @@
 # Written by Boris Bonev, Nov. 2020
 
 ## function for direct solution using the implicit ULV factorization
-function ulvfactsolve(hssA::HssMatrix{T}, b::Matrix{T}) where T
+function ulvfactsolve(hssA::HssMatrix{T}, b::VecOrMat{T}) where T
   if isleaf(hssA)
     return hssA.D\b
   else
-    z = zeros(size(hssA,2), size(b,2))
-    _, _, _, _, _, _, _, QV = _ulvfactsolve!(hssA, b, z, 0; rootnode=true)
+    z = zeros(eltype(hssA),size(hssA,2), size(b,2))
+    _, _, _, _, _, _, _, QV = _ulvfactsolve!(hssA, reshape(b,size(b,1),size(b,2)), z, 0; rootnode=true)
     z = _ulvfactsolve_topdown!(QV, z)
     return z
   end

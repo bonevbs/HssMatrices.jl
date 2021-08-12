@@ -231,7 +231,7 @@ for op in (:+,:-)
 end
 
 # matrix division involving HSS matrices
-\(hssA::HssMatrix, B::Matrix) = ulvfactsolve(hssA, B)
+\(hssA::HssMatrix, B::VecOrMat) = ulvfactsolve(hssA, B)
 \(hssA::HssMatrix, hssB::HssMatrix) = ldiv!(hssA, copy(hssB))
 /(A::Matrix, hssB::HssMatrix) = ulvfactsolve(hssB', collect(A'))'
 /(hssA::HssMatrix, hssB::HssMatrix) = rdiv!(copy(hssA), hssB)
