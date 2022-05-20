@@ -128,7 +128,8 @@ function _ltransforms_kernel!(hssA::HssMatrix, Q::BinaryNode)
   return hssA
 end
 function _vtransforms_kernel!(hssA::HssMatrix, Q::BinaryNode)
-  eltype(hssA) <: Complex ? adj = 'C' : adj = 'T'
+  eltype(hssA) <: Complex ? adj = 'C' : adj = 'T' 
+  if size(Q.data[1], 1) == 0 return hssA end
   hssA.D = ormlq!('L', adj, Q.data..., hssA.D)
   hssA.U = ormlq!('L', adj, Q.data..., hssA.U)
   return hssA

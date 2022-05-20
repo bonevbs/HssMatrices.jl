@@ -14,6 +14,7 @@ using Test, LinearAlgebra, HssMatrices
 end
 
 @testset for T in [Float32, Float64, ComplexF32,ComplexF64]
+
     # generate Cauchy matrix
     K(x,y) = (x-y) > 0 ? 0.001/(x-y) : 2.
     A = [ T(K(x,y)) for x=-1:0.001:1, y=-1:0.001:1];
@@ -60,7 +61,7 @@ end
         @test norm(Ainv - full(hssI/hssA))/norm(Ainv) ≤ c*HssOptions().rtol || norm(Ainv - full(hssI/hssA)) ≤ c*HssOptions().atol
         hssA.A11 = prune_leaves!(hssA.A11)
         hssI.A11 = prune_leaves!(hssI.A11)
-        @test_skip norm(Ainv - full(hssA\hssI))/norm(Ainv) ≤ c*HssOptions().rtol || norm(Ainv - full(hssA\hssI)) ≤ c*HssOptions().atol
-        @test_skip norm(Ainv - full(hssI/hssA))/norm(Ainv) ≤ c*HssOptions().rtol || norm(Ainv - full(hssI/hssA)) ≤ c*HssOptions().atol
+        @test norm(Ainv - full(hssA\hssI))/norm(Ainv) ≤ c*HssOptions().rtol || norm(Ainv - full(hssA\hssI)) ≤ c*HssOptions().atol
+        @test norm(Ainv - full(hssI/hssA))/norm(Ainv) ≤ c*HssOptions().rtol || norm(Ainv - full(hssI/hssA)) ≤ c*HssOptions().atol
     end
 end 
