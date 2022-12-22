@@ -18,17 +18,20 @@ end
     # generate Cauchy matrix
     K(x,y) = (x-y) > 0 ? 0.001/(x-y) : 2.
     A = [ T(K(x,y)) for x=-1:0.001:1, y=-1:0.001:1];
+    if T <: Complex
+        A = A + 1im .* A
+    end
     m, n = size(A)
     U = randn(T,n,3); V = randn(T,n,3)
     # "safety" factor
     c = 50.
-    # increase tolerance for Float32 and ComplexF32
     tol = 1E-6
     HssMatrices.setopts(atol=tol)
     HssMatrices.setopts(rtol=tol)
 
     rcl = bisection_cluster(1:m)
     ccl = bisection_cluster(1:n)
+
 
     @testset "compression" begin
         hssA = compress(A, rcl, ccl);
@@ -41,6 +44,17 @@ end
         hssC = lowrank2hss(U, V, ccl, ccl)
         @test norm(U*V' - full(hssC))/norm(U*V') ≤ c*tol
         @test hssrank(hssC) == 3
+    end;
+
+    @testset "random access" begin
+        I = rand(1:size(A,1), 10)
+        J = rand(1:size(A,1), 10)
+        function testAccuracy(expected, result)
+            @test norm(expected - result)/norm(expected) ≤ c*HssOptions().rtol || norm(expected - result) ≤ c*HssOptions().atol
+        end
+        testAccuracy(A[I,J], compress(A, rcl, ccl)[I,J])
+        testAccuracy(A[I,:], compress(A, rcl, ccl)[I,:])
+        testAccuracy(A[:,J], compress(A, rcl, ccl)[:,J])
     end;
 
     @testset "arithmetic" begin
