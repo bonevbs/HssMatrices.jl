@@ -23,7 +23,7 @@ end
     # "safety" factor
     c = 50.
     # increase tolerance for Float32 and ComplexF32
-    tol = max(1E-6,50*eps(real(T)))
+    tol = 1E-6
     HssMatrices.setopts(atol=tol)
     HssMatrices.setopts(rtol=tol)
 
@@ -39,7 +39,7 @@ end
         @test norm(A - full(hssB))/norm(A) ≤ c*HssOptions().rtol || norm(A - full(hssB)) ≤ c*HssOptions().atol
         @test hssrank(hssB) ≤ rk
         hssC = lowrank2hss(U, V, ccl, ccl)
-        @test norm(U*V' - full(hssC))/norm(U*V') ≤ c*eps(real(T))
+        @test norm(U*V' - full(hssC))/norm(U*V') ≤ c*tol
         @test hssrank(hssC) == 3
     end;
 
@@ -55,7 +55,7 @@ end
         Id(i,j) = Matrix{T}(i.*ones(length(j))' .== ones(length(i)).*j')
         IdOp = LinearMap{T}(n, n, (y,_,x) -> x, (y,_,x) -> x, (i,j) -> Id(i,j))
         hssI = randcompress(IdOp, ccl, ccl, 0)
-        @test norm(full(hssA*hssI) - full(hssA))/norm(full(hssA)) ≤ c*eps()
+        @test norm(full(hssA*hssI) - full(hssA))/norm(full(hssA)) ≤ c*tol
         Ainv = inv(A)
         @test norm(Ainv - full(hssA\hssI))/norm(Ainv) ≤ c*HssOptions().rtol || norm(Ainv - full(hssA\hssI)) ≤ c*HssOptions().atol
         @test norm(Ainv - full(hssI/hssA))/norm(Ainv) ≤ c*HssOptions().rtol || norm(Ainv - full(hssI/hssA)) ≤ c*HssOptions().atol
