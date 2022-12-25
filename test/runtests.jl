@@ -49,9 +49,8 @@ end
     @testset "random access" begin
         I = rand(1:size(A,1), 10)
         J = rand(1:size(A,1), 10)
-        function testAccuracy(expected, result)
-            @test norm(expected - result)/norm(expected) ≤ c*HssOptions().rtol || norm(expected - result) ≤ c*HssOptions().atol
-        end
+        testAccuracy(expected, result) = @test norm(expected - result)/norm(expected) ≤ c*HssOptions().rtol || 
+            norm(expected - result) ≤ c*HssOptions().atol
         testAccuracy(A[I,J], compress(A, rcl, ccl)[I,J])
         testAccuracy(A[I,:], compress(A, rcl, ccl)[I,:])
         testAccuracy(A[:,J], compress(A, rcl, ccl)[:,J])
