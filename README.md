@@ -103,7 +103,7 @@ plotranks(hssA)
 This should generate an image similar to the one seen at the top of the page.
 
 ## Contribute
-We would like to encourage users to share their problems, bugs and experiences so that we can keep improving the library.
+If you would like to contribute, start by looking at the issues and making a pull request. Writing unit tests and increasing code coverage is always a welcome contribution as well.
 
 ## Acknowledgements
 This library was inspired by the amazing package [hm-toolbox](https://github.com/numpi/hm-toolbox) by Stefano Massei, Leonardo Robol and Daniel Kressner. If you are using Matlab, I highly recommend to try this package.
