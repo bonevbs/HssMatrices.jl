@@ -35,7 +35,7 @@ end
 # recursive function for getting just the desired index of colmn/row generators
 function _getindex_colgenerator(hssA::HssMatrix, i::Int)
   if isleaf(hssA)
-    return hssA.U[i,:]'
+    return hssA.U[i,:] |> transpose
   else
     m1 = hssA.sz1[1]
     if i <= m1
@@ -47,7 +47,7 @@ function _getindex_colgenerator(hssA::HssMatrix, i::Int)
 end
 function _getindex_rowgenerator(hssA::HssMatrix, j::Int)
   if isleaf(hssA)
-    hssA.V[j,:]'
+    hssA.V[j,:] |> transpose
   else
     n1 = hssA.sz1[2]
     if j <= n1

@@ -321,8 +321,8 @@ function randcompress_adaptive(A::AbstractMatOrLinOp{T}, rcl::ClusterTree, ccl::
   # compute initial sampling
   k = kest; r = opts.noversampling; bs = opts.stepsize
   #bs = Integer(ceil(n*0.01)) # this should probably be better estimated
-  Ωcol = randn(n, k+r)
-  Ωrow = randn(m, k+r)
+  Ωcol = randn(T, n, k+r)
+  Ωrow = randn(T, m, k+r)
   Scol = A*Ωcol # this should invoke the magic of the linearoperator.jl type
   Srow = A'*Ωrow
   failed = true
@@ -331,8 +331,8 @@ function randcompress_adaptive(A::AbstractMatOrLinOp{T}, rcl::ClusterTree, ccl::
     # TODO: In further versions we might want to re-use the information gained during previous attempts
     hssA, _, _, _, _, _, _, _, _  = _randcompress!(hssA, A, Scol, Srow, Ωcol, Ωrow, 0, 0, opts.atol, opts.rtol; rootnode=true)
 
-    Ωcol_test = randn(n, bs)
-    Ωrow_test = randn(m, bs)
+    Ωcol_test = randn(T, n, bs)
+    Ωrow_test = randn(T, m, bs)
     Scol_test = A*Ωcol_test
     Srow_test = A'*Ωrow_test
 

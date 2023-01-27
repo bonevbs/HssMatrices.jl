@@ -121,14 +121,15 @@ function _utransforms_kernel!(hssA::HssMatrix, Q::BinaryNode)
 end
 function _ltransforms_kernel!(hssA::HssMatrix, Q::BinaryNode)
   nk = size(Q.data,1)
-  hssA.D[1:nk, :] = trsm('L', 'L', 'N', 'N', 1., Q.data, hssA.D[1:nk,:])
-  hssA.U[1:nk, :] = trsm('L', 'L', 'N', 'N', 1., Q.data, hssA.U[1:nk,:])
+  hssA.D[1:nk, :] = trsm('L', 'L', 'N', 'N', eltype(hssA)(1), Q.data, hssA.D[1:nk,:])
+  hssA.U[1:nk, :] = trsm('L', 'L', 'N', 'N', eltype(hssA)(1), Q.data, hssA.U[1:nk,:])
   hssA.D[nk+1:end, :] .= eltype(hssA)(0)
   hssA.U[nk+1:end, :] .= eltype(hssA)(0)
   return hssA
 end
 function _vtransforms_kernel!(hssA::HssMatrix, Q::BinaryNode)
-  eltype(hssA) <: Complex ? adj = 'C' : adj = 'T'
+  eltype(hssA) <: Complex ? adj = 'C' : adj = 'T' 
+  if size(Q.data[1], 1) == 0 return hssA end
   hssA.D = ormlq!('L', adj, Q.data..., hssA.D)
   hssA.U = ormlq!('L', adj, Q.data..., hssA.U)
   return hssA

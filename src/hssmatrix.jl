@@ -138,13 +138,13 @@ function _getidx(hssA::HssMatrix, i::Int, j::Int)
       else
         U1 = _getindex_colgenerator(hssA.A11, i)
         V2 = _getindex_rowgenerator(hssA.A22, j-n1)
-        return dot(U1*hssA.B12, V2)
+        return U1*hssA.B12*V2'
       end
     else
       if j <= n1
         U2 = _getindex_colgenerator(hssA.A22, i-m1)
         V1 = _getindex_rowgenerator(hssA.A11, j)
-        return dot(U2*hssA.B21, V1)
+        return U2*hssA.B21*V1'
       else
         return _getidx(hssA.A22, i-m1, j-n1)
       end
