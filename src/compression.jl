@@ -435,7 +435,7 @@ function _interpolate(A::AbstractMatrix{T}, atol::Float64, rtol::Float64) where 
   size(A,2) == 0 && return Matrix{eltype(A)}(undef, 0, 0), Vector{Int}()
   #_, R, p = prrqr(A, tol; reltol=reltol)
   #rk = min(size(R)...)
-  _, R, p  = qr(A, Val(true))
+  _, R, p  = qr(A, ColumnNorm())
   tol = min( atol, rtol * abs(R[1,1]) )
   rk = sum(abs.(diag(R)) .> tol)
   J = p[1:rk]
