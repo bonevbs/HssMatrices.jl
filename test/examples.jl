@@ -5,7 +5,7 @@ using AbstractTrees
 using Plots
 
 # generate Cauchy matrix
-K(x,y) = (x-y) > 0 ? 0.001/(x-y) : 2.
+K(x,y) = (x-y) > 0. ? 0.001/(x-y) : 2.
 #K(x,y) = (x-y) != 0 ? 1/(x-y) : 1.
 A = [ K(x,y) for x=-1:0.001:1, y=-1:0.001:1];
 C = inv(A);

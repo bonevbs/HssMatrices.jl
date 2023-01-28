@@ -15,7 +15,7 @@
 # Martinsson, P. G. (2011). A Fast Randomized Algorithm for Computing a Hierarchically Semiseparable Representation of a Matrix.
 # SIAM Journal on Matrix Analysis and Applications, 32(4), 1251–1274. https://doi.org/10.1137/100786617
 #
-# Re-Written by Boris Bonev, Jan. 2021
+# Written by Boris Bonev, Jan. 2021
 
 
 # Utility routine to provide access to pivoted rank-revealing qr
@@ -430,11 +430,11 @@ function _randcompress!(hssA::HssMatrix, A::AbstractMatOrLinOp, Scol::Matrix, Sr
 end
 
 # interpolative decomposition
-# still gotta figure out which qr decomposition to use
 function _interpolate(A::AbstractMatrix{T}, atol::Float64, rtol::Float64) where T
   size(A,2) == 0 && return Matrix{eltype(A)}(undef, 0, 0), Vector{Int}()
   #_, R, p = prrqr(A, tol; reltol=reltol)
   #rk = min(size(R)...)
+  # _, R, p  = qr(A, Val{true})
   _, R, p  = qr(A, ColumnNorm())
   tol = min( atol, rtol * abs(R[1,1]) )
   rk = sum(abs.(diag(R)) .> tol)
